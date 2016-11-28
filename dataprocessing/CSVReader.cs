@@ -23,7 +23,8 @@ namespace ARIMA.dataprocessing
             return headers;                    
         }
 
-        public List<string> getData(int attrindex, string filename)
+        // returns the data in a list of string arrays in the form of [date, time, value]
+        public List<string[]> getData(int attrindex, int dateindex, int timeindex, string filename)
         {
             System.IO.StreamReader reader = null;
             try
@@ -34,11 +35,12 @@ namespace ARIMA.dataprocessing
                 return null;
             }
             string line = reader.ReadLine();
-            List<String> data = new List<String>();
+            List<String[]> data = new List<String[]>();
             while ((line = reader.ReadLine()) != null)
             {
                 string[] values = line.Split(',').Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
-                data.Add(values[attrindex]);
+                string[] linedata = new string[] { values[dateindex], values[timeindex], values[attrindex] };
+                data.Add(linedata);
             }
             return data;
         }

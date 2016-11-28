@@ -18,7 +18,7 @@ namespace ARIMA
             string file = args[0];
             ARIMA.dataprocessing.CSVReader reader = new ARIMA.dataprocessing.CSVReader();
             string[] headers = reader.getHeaders(file);
-            List<String> data = reader.getData(0, file);
+            List<String[]> data = reader.getData(0, 1, 2, file);
         }
     }
 }

@@ -1,2 +1,4 @@
 ﻿bin/*
 obj/*
+data/household_power_consumption.txt
+TestResults/*
