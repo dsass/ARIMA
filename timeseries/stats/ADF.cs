@@ -108,11 +108,12 @@ namespace ARIMA.timeseries.stats
                     maxlag = (int)Math.Ceiling(12.0 * Math.Pow(length / 100, 1 / 4.0));
                 }
                 double[] xdiff = MathFunctions.diff(x);
-                double[] xdall = MathFunctions.lagmat(xdiff, maxlag);
-                length = xdall.Length;
+                double[,] xdall = MathFunctions.lagmat(xdiff, maxlag);
+                length = xdall.GetLength(0);
+                // supposed to be something here as well np.asanyarray not sure if needed
                 if (auto != null)
                 {
-                    double[] fullRHS = null;
+                    double[,] fullRHS = null;
                     if (String.Compare(reg, "nc", StringComparison.CurrentCulture) == 0)
                     {
                         fullRHS = MathFunctions.add_trend(xdall, reg, true);
@@ -121,7 +122,7 @@ namespace ARIMA.timeseries.stats
                     {
                         fullRHS = xdall;
                     }
-                    int startlag = fullRHS.Length - xdall.Length + 1; // 1 for level
+                    int startlag = fullRHS.GetLength(1) - xdall.GetLength(1) + 1; // 1 for level
                     // search for lag length with smallest information criteria
                     // Note: use the same number of observations to have comparable IC
                     // aic and bic: smaller is better

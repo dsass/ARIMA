@@ -80,6 +80,54 @@ namespace ARIMA.timeseries.math
             return x;
         }
 
+        public static double[,] column_stack(double[,] array1, double[,] array2)
+        {
+            int length = array1.GetLength(1) + array2.GetLength(2);
+            double[,] res = new double[array1.GetLength(0), length];
+            for (int i = 0; i < array1.GetLength(0); i++)
+            {
+                for (int j = 0; j < array1.GetLength(1); j++)
+                {
+                    res[i, j] = array1[i, j];
+                }
+            }
+            for (int i = 0; i < array1.GetLength(0); i++)
+            {
+                for (int j = array1.GetLength(1); j < length; j++)
+                {
+                    res[i, j] = array2[i, j - array1.GetLength(1)];
+                }
+            }
+            return res;
+        }
+
+        public static double[,] roll(double[,] X, int shift, int axis)
+        {
+            double[,] res = new double[X.GetLength(0), X.GetLength(1)];
+            int otherdim = (axis + 1) % 2;
+            if (otherdim == 0)
+            {
+                for (int i = 0; i < X.GetLength(otherdim); i++)
+                {
+                    for (int j = 0; j < X.GetLength(axis); j++)
+                    {
+                        res[i, j] = X[i, (j + X.GetLength(axis) - 1) % X.GetLength(axis)];
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < X.GetLength(axis); i++)
+                {
+                    for (int j = 0; j < X.GetLength(otherdim); j++)
+                    {
+                        res[i, j] = X[(i + X.GetLength(axis) - 1) % X.GetLength(axis), j];
+                    }
+                }
+            }
+            return res;
+        }
+
         public static double variance(double[,] x, int axis)
         {
             int dim1 = x.GetLength(0);
@@ -113,33 +161,37 @@ namespace ARIMA.timeseries.math
 
         public static double[,] add_constant(double[,] X, bool prepend)
         {
-            //if (variance(X, 0) == 0)
-            //{
-            //    return X;
-            //}
-            //else
-            //{
-            //    X = np.column_stack((X, np.ones((X.shape[0], 1))))
-            //    if (prepend)
-            //    {
-            //        return np.roll(X, 1, 1)
-            //    } else
-            //    {
-            //        return X;
-            //    }
-            //}
-            return X;
+            if (variance(X, 0) == 0)
+            {
+                return X;
+            }
+            else
+            {
+                double[,] ones = new double[X.GetLength(0), 1];
+                for (int i = 0; i < X.GetLength(0); i++)
+                {
+                    ones[i, 0] = 1;
+                }
+                X = column_stack(X, ones);
+                if (prepend)
+                {
+                    return roll(X, 1, 1);
+                } else
+                {
+                   return X;
+                }
+            }
         }
 
-        public static double[] add_trend(double[] X, string trend = "c", bool prepend = false)
+        public static double[,] add_trend(double[,] X, string trend = "c", bool prepend = false)
         {
             trend = trend.ToLower();
             int trendorder = 0;
             if (String.Equals(trend, "c"))
             {
-                return add_constant(X, prepend = prepend);
+                return add_constant(X, prepend);
             }
-            else if (String.Equals(trend, "ct") || String.equals(trend, "t"))
+            else if (String.Equals(trend, "ct") || String.Equals(trend, "t"))
             {
                 trendorder = 1;
             }
@@ -149,10 +201,10 @@ namespace ARIMA.timeseries.math
             }
             else
             {
-                throw new ValueError("trend %s not understood" % trend);
+                throw new ArgumentException();
             }
 
-            int nobs = X.Length;
+            int nobs = X.GetLength(0);
             double[] a = new double[nobs];
             for (int i = 1; i < nobs + 1; i++)
             {
@@ -165,6 +217,13 @@ namespace ARIMA.timeseries.math
             //{
             //    trendarr = trendarr[:,1];
             //}
+            if (prepend == false)
+            {
+                return column_stack(X, trendarr);
+            } else
+            {
+                return column_stack(trendarr, X);
+            }
             //if not X.dtype.names:
             //    if not prepend:
             //        X = np.column_stack((X, trendarr))
