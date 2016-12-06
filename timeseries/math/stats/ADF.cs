@@ -5,15 +5,67 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using ARIMA.timeseries.math;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace ARIMA.timeseries.stats
 {
     // Augmented Dickey-Fuller Test
     class ADF
     {
-        private double[] autolag(string model, int startlag, int maxlag, string method)
+        private double[] autolag(string model, double[] enddata, double[,] exogdata, int startlag, int maxlag, string method)
         {
-            return null;
+            //results = { }
+            Dictionary<int, models.RegressionResults> results = new Dictionary<int, models.RegressionResults>();
+            method = method.ToLower();
+            for (int lag=startlag; lag<=startlag+maxlag; lag++)
+            {
+                Matrix<double> exog = Matrix<double>.Build.DenseOfArray(exogdata);
+                Matrix<double> end = Matrix<double>.Build.DenseOfArray(enddata.to);
+                models.OLS OLS_instance = new models.OLS(end,exog,model);
+                results.Add(lag, OLS_instance.fit());
+            }
+            //for lag in range(startlag, startlag + maxlag + 1):
+            //    mod_instance = mod(endog, exog[:,:lag], *modargs)
+            //    results[lag] = mod_instance.fit()
+            double[] res = new double[2];
+            if (method.Equals("aic"))
+            {
+                double max = Double.MaxValue;
+                int bestlag = 0;
+                foreach (int k in results.Keys)
+                {
+                    if (results[k].Aic < max)
+                    {
+                        max = results[k].Aic;
+                        bestlag = k;
+                    }
+                }
+                res[0] = max;
+                res[1] = bestlag;
+            }
+            //if method == "aic":
+            //    icbest, bestlag = min((v.aic, k) for k, v in results.iteritems())
+            //            elif method == "bic":
+            //    icbest, bestlag = min((v.bic, k) for k, v in results.iteritems())
+            //            elif method == "t-stat":
+            //    lags = sorted(results.keys())[::- 1]
+            //    #stop = stats.norm.ppf(.95)
+            //    stop = 1.6448536269514722
+            //    for lag in range(startlag + maxlag, startlag - 1, -1):
+            //        icbest = np.abs(results[lag].tvalues[-1])
+            //        if np.abs(icbest) >= stop:
+            //            bestlag = lag
+            //            icbest = icbest
+            //            break
+            //else:
+            //    raise ValueError("Information Criterion %s not understood.") % method
+
+            //if not regresults:
+            //            return icbest, bestlag
+            //else:
+            //    return icbest, bestlag, results
+            //return null;
+            return res;
         }
         //    def _autolag(mod, endog, exog, startlag, maxlag, method, modargs= (),
         //    fitargs= (), regresults= False):
@@ -98,6 +150,7 @@ namespace ARIMA.timeseries.stats
                 { 2, "ctt" }
             };
             string reg = null;
+            //int nobs = x.Length;
             int length = 0;
             if (-2 < regression && regression < 3)
             {
@@ -110,6 +163,11 @@ namespace ARIMA.timeseries.stats
                 double[] xdiff = MathFunctions.diff(x);
                 double[,] xdall = MathFunctions.lagmat(xdiff, maxlag);
                 length = xdall.GetLength(0);
+                double[] xdshort = new double[length]; //xdiff[-nobs:]
+                for (int i = xdiff.Length - length; i < xdiff.Length; i++)
+                {
+                    xdshort[i - (xdiff.Length - length)] = xdiff[i];
+                }
                 // supposed to be something here as well np.asanyarray not sure if needed
                 if (auto != null)
                 {
@@ -129,22 +187,18 @@ namespace ARIMA.timeseries.stats
 
 
                     // call autolag
-                    double[] best = autolag("OLS", startlag, maxlag, auto);
+                    double[] best = autolag("OLS", xdshort, fullRHS, startlag, maxlag, auto);
                     best[1] -= startlag; // convert to lag not column index
 
                     // rerun OLS with best autolag
                     xdall = MathFunctions.lagmat(xdiff, (int) best[1]);
                     length = xdall.Length;
 
+
+                    //xdall[:, 0] = x[-nobs - 1:-1] # replace 0 xdiff with level of x
+                    //xdshort = xdiff[-nobs:]
+                    double usedlag = best[1];
                 }
-        //        if regression != 'nc':
-        //            fullRHS = add_trend(xdall, regression, prepend= True)
-        //        else:
-        //            fullRHS = xdall
-        //        startlag = fullRHS.shape[1] - xdall.shape[1] + 1 # 1 for level  # pylint: disable=E1103
-        //        #search for lag length with smallest information criteria
-        //        #Note: use the same number of observations to have comparable IC
-        //        #aic and bic: smaller is better
 
                     //        if not regresults:
                     //            icbest, bestlag = _autolag(OLS, xdshort, fullRHS, startlag,

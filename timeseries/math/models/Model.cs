@@ -7,10 +7,10 @@ using MathNet.Numerics.LinearAlgebra;
 
 namespace ARIMA.timeseries.models
 {
-    class Model
+    public class Model
     {
-        protected Matrix<double> enddata;
-        protected Matrix<double> exogdata;
+        static protected Matrix<double> enddata;
+        static protected Matrix<double> exogdata;
 
         public Model(Matrix<double> endog, Matrix<double> exog)
         {
@@ -29,7 +29,7 @@ namespace ARIMA.timeseries.models
             // this method needs to take inputs...
             throw new NotImplementedException();
         }
-        double loglike()
+        public virtual Matrix<double> loglike(Matrix<double> param)
         {
             //def loglike(self, params):
             //Log-likelihood of model.

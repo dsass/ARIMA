@@ -8,7 +8,7 @@ using MathNet.Numerics.LinearAlgebra;
 namespace ARIMA.timeseries.models
 {
     // ordinary least squares regression model
-    class OLS : RegressionModel
+    public class OLS : RegressionModel
     {
         public OLS(Matrix<double> endog, Matrix<double> exog, string m) : base(endog, exog, m) {}
 
@@ -25,7 +25,7 @@ namespace ARIMA.timeseries.models
             return m;
         }
 
-        public Matrix<double> loglike(Matrix<double> param)
+        public override Matrix<double> loglike(Matrix<double> param)
         {
             //        The likelihood function for the clasical OLS model.
 
