@@ -21,7 +21,7 @@ namespace ARIMA.timeseries.models
             cov_params = normalized_cov_params;
             param = p;
             adfstat = (param.At(0,0) - 1.0) / bse()[0];
-            aic = -2 * llf + 2 * (m.Df_model + m.k);
+            //aic = -2 * llf + 2 * (m.Df_model + m.k);
         }
         
     

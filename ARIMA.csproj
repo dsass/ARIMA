@@ -47,9 +47,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ABMath\IridiumExtensions\Class1.cs" />
-    <Compile Include="ABMath\IridiumExtensions\VectorExtensions.cs" />
-    <Compile Include="ABMath\ModelFramework\Models\ARMAModel.cs" />
     <Compile Include="dataprocessing\CSVReader.cs" />
     <Compile Include="dataprocessing\DataObject.cs" />
     <Compile Include="Program.cs" />
@@ -57,7 +54,6 @@
     <Compile Include="timeseries\math\linalg\ArrayManipulation.cs" />
     <Compile Include="timeseries\math\MathFunctions.cs" />
     <Compile Include="timeseries\math\models\Model.cs" />
-    <Compile Include="timeseries\math\models\OLS.cs" />
     <Compile Include="timeseries\math\models\RegressionModel.cs" />
     <Compile Include="timeseries\math\models\RegressionResults.cs" />
     <Compile Include="timeseries\math\stats\ADF.cs" />
@@ -71,10 +67,7 @@
     <Content Include=".gitignore" />
     <Content Include="data\household_power_consumption.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ABMath\Miscellaneous\" />
-    <Folder Include="ABMath\ModelFramework\Data\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

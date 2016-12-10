@@ -10,139 +10,146 @@ namespace ARIMA.timeseries.models
     public class RegressionModel : Model
     {
         string[] data_attr;
-        Matrix<double> normalized_cov_params;
+        //Matrix<double> normalized_cov_params;
         static double thisrank;
         static double df_model;
-        Matrix<double> pinv_wexog;
+        //Matrix<double> pinv_wexog;
         Matrix<double> wexog;
         protected double nobs;
         Matrix<double> wendog;
         string thismodel;
         static int k_constant;
 
-        public RegressionModel(Matrix<double> endog, Matrix<double> exog, string m) : base(endog, exog)
+        public RegressionModel(Matrix<double> Xdata, Matrix<double> Ydata, string m) : base(Xdata, Ydata)
         {
-            data_attr = new string[] { "pinv_wexog", "wendog", "wexog", "weights" };
-            
-            wexog = whiten(exogdata);
-            wendog = whiten(enddata);
-            Console.WriteLine(wexog.ToString());
-            Console.WriteLine(wendog.ToString());
-            //normalized_cov_params = Matrix<double>.Build.Dense(1, 1, 1);
-            // overwrite nobs from class Model:
-            nobs = (double)wexog.RowCount;
-
-            //self._df_model = None
-            //self._df_resid = None
-            thisrank = 0;
-            df_model = 0;
-            k_constant = 0;
+            nobs = (double)X.RowCount;
             thismodel = m;
-            computedfmodel();
         }
 
-        public int K_constant
+        public double Rsquared(Matrix<double> data, Vector<double> coef)
         {
-            get
+            // 'coefficient of determination'
+            int rows = data.RowCount;
+            int cols = data.ColumnCount;
+
+            // 1. compute mean of y
+            double ySum = 0.0;
+            for (int i = 0; i < rows; ++i)
+                ySum += data[i,cols - 1]; // last column
+            double yMean = ySum / rows;
+
+            // 2. sum of squared residuals & tot sum squares
+            double ssr = 0.0;
+            double sst = 0.0;
+            double y; // actual y value
+            double predictedY; // using the coef[] 
+            for (int i = 0; i < rows; ++i)
             {
-                return k_constant;
+                y = data[i,cols - 1]; // get actual y
+
+                predictedY = coef[0]; // start w/ intercept constant
+                for (int j = 0; j < cols - 1; ++j) // j is col of data
+                    predictedY += coef[j + 1] * data[i,j]; // careful
+
+                ssr += (y - predictedY) * (y - predictedY);
+                sst += (y - yMean) * (y - yMean);
             }
+
+            if (sst == 0.0)
+                throw new Exception("All y values equal");
+            else
+                return 1.0 - (ssr / sst);
         }
 
-        private static void computedfmodel()
+        public Matrix<double> designMatrix(Matrix<double> data)
         {
-            // the model degree of freedom, defined as the rank of the regressor matrix - 1
-            // if a constant is included
-            if (df_model == 0)
+            // add a leading col of 1.0 values
+            int rows = data.RowCount;
+            int cols = data.ColumnCount;
+            Matrix<double> result = Matrix<double>.Build.Dense(rows, cols + 1);
+            //double[][] result = MatrixCreate(rows, cols + 1);
+            for (int i = 0; i < rows; ++i)
+                result[i,0] = 1.0;
+
+            for (int i = 0; i < rows; ++i)
+                for (int j = 0; j < cols; ++j)
+                    result[i,j + 1] = data[i,j];
+
+            return result;
+        }
+
+        public Vector<double> fit(Matrix<double> design)
+        {
+            // find linear regression coefficients
+            // 1. peel off X matrix and Y vector
+            int rows = design.RowCount;
+            int cols = design.ColumnCount;
+            Matrix<double> X = Matrix<double>.Build.Dense(rows, cols - 1);
+            Vector<double> Y = Vector<double>.Build.Dense(rows, 1);//MatrixCreate(rows, 1); // a column vector
+
+            int j;
+            for (int i = 0; i < rows; ++i)
             {
-                if (thisrank == 0)
+                for (j = 0; j < cols - 1; ++j)
                 {
-                    thisrank = (double)exogdata.Rank();
+                    X[i,j] = design[i,j];
                 }
-                df_model = (double)(thisrank - k_constant);
+                Y[i] = design[i,j]; // last column
             }
-        }
 
-        public double Df_model
+            Matrix<double> Xt = X.Transpose();
+            Matrix<double> XtX = Xt * X;
+            Matrix<double> inv = XtX.Inverse();
+            Matrix<double> invXt = inv * Xt;
+
+            Vector<double> result = invXt * Y;
+
+            // 2. B = inv(Xt * X) * Xt * y
+           // double[][] Xt = MatrixTranspose(X);
+           // double[][] XtX = MatrixProduct(Xt, X);
+           // double[][] inv = MatrixInverse(XtX);
+           // double[][] invXt = MatrixProduct(inv, Xt);
+
+           // double[][] mResult = MatrixProduct(invXt, Y);
+           // double[] result = MatrixToVector(mResult);
+            return result;
+        } // Solve
+
+        public Matrix<double> DummyData(int rows, int seed)
         {
-            get
+            // generate dummy data for linear regression problem
+            double b0 = 15.0;
+            double b1 = 0.8; // education years
+            double b2 = 0.5; // work years
+            double b3 = -3.0; // sex = 0 male, 1 female
+            Random rnd = new Random(seed);
+
+            Matrix<double> result = Matrix<double>.Build.Dense(rows, 4);
+
+            for (int i = 0; i < rows; ++i)
             {
-                return df_model;
+                int ed = rnd.Next(12, 17); // 12, 16]
+                int work = rnd.Next(10, 31); // [10, 30]
+                int sex = rnd.Next(0, 2); // 0 or 1
+                double y = b0 + (b1 * ed) + (b2 * work) + (b3 * sex);
+                y += 10.0 * rnd.NextDouble() - 5.0; // random [-5 +5]
+
+                result[i,0] = ed;
+                result[i,1] = work;
+                result[i,2] = sex;
+                result[i,3] = y; // income
             }
+            return result;
         }
 
-        public virtual Matrix<double> whiten(Matrix<double> X)
+        public double testValue(Matrix<double> data, Vector<double> coeff)
         {
-            throw new NotImplementedException();
+            double rsquared = Rsquared(data, coeff);
+            double numerator = nobs - 2;
+            double denominator = 1 - rsquared;
+            return Math.Sqrt(rsquared) * Math.Sqrt(numerator / denominator);
         }
 
-        public RegressionResults fit(string method="pinv", string cov_type="nonrobust")
-        {
-            //        Full fit of the model.
-
-            //        The results include an estimate of covariance matrix, (whitened)
-            //        residuals and an estimate of scale.
-
-            //        Parameters
-            //        ----------
-            //        method: str
-            //            Can be "pinv", "qr".  "pinv" uses the Moore - Penrose pseudoinverse
-            //            to solve the least squares problem. "qr" uses the QR
-            //            factorization.
-
-            //        Returns
-            //        ------ -
-            //        A RegressionResults class instance.
-
-            //        See Also
-            //        ---------
-            //        regression.RegressionResults
-
-            //        Notes
-            //        -----
-            //        The fit method uses the pseudoinverse of the design/exogenous variables
-            //        to solve the least squares minimization.
-            Matrix<double> beta = null;
-           // if (String.Equals(method, "pinv"))
-           // {
-                //if (pinv_wexog == null || normalized_cov_params == null || rank == null)
-                //{
-                    pinv_wexog = math.linalg.ArrayManipulation.pinv_extend(wexog);
-                    normalized_cov_params = pinv_wexog.Transpose().PointwiseMultiply(pinv_wexog);
-                //}
-                //Console.WriteLine(wendog.ToString());
-            int rows = pinv_wexog.RowCount;
-            Matrix<double> wendogcopy = Matrix<double>.Build.Dense(rows, rows, 1.0);
-            //Matrix<double> wendogcopy = Matrix<double>.Build.Dense((int)pinv_wexog.RowCount, (int)pinv_wexog.RowCount, 1.0);
-            beta = pinv_wexog.PointwiseMultiply(wendog);
-            //Console.WriteLine(wendogcopy);
-            //beta = pinv_wexog.PointwiseMultiply(wendogcopy);
-            //} else if (String.Equals(method, "qr"))
-            // {
-            //   beta = pinv_wexog.PointwiseDivide(wendog);
-            //            if ((not hasattr(self, 'exog_Q')) or
-            //                (not hasattr(self, 'exog_R')) or
-            //                (not hasattr(self, 'normalized_cov_params')) or
-            //                (getattr(self, 'rank', None) is None)):
-            //                Q, R = np.linalg.qr(self.wexog)
-            //                self.exog_Q, self.exog_R = Q, R
-            //                self.normalized_cov_params = np.linalg.inv(np.dot(R.T, R))
-
-            //                # Cache singular values from R.
-            //                self.wexog_singular_values = np.linalg.svd(R, 0, 0)
-            //                self.rank = np_matrix_rank(R)
-            //            else:
-            //                Q, R = self.exog_Q, self.exog_R
-
-            //# used in ANOVA
-            //            self.effects = effects = np.dot(Q.T, self.wendog)
-            //            beta = np.linalg.solve(R, effects)
-            //  }
-            if (df_model == 0)
-            {
-                df_model = thisrank - k_constant;
-            }
-            return new RegressionResults(thismodel, this, beta, normalized_cov_params);
-        }
     }
+
 }

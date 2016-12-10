@@ -9,13 +9,13 @@ namespace ARIMA.timeseries.models
 {
     public class Model
     {
-        static protected Matrix<double> enddata;
-        static protected Matrix<double> exogdata;
+        static protected Matrix<double> X;
+        static protected Matrix<double> Y;
 
-        public Model(Matrix<double> endog, Matrix<double> exog)
+        public Model(Matrix<double> Xdata, Matrix<double> Ydata)
         {
-            enddata = endog;
-            exogdata = exog;
+            X = Xdata;
+            Y = Ydata ;
         }
 
         string fit()
