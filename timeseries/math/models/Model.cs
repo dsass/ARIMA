@@ -10,9 +10,9 @@ namespace ARIMA.timeseries.models
     public class Model
     {
         static protected Matrix<double> X;
-        static protected Matrix<double> Y;
+        static protected Vector<double> Y;
 
-        public Model(Matrix<double> Xdata, Matrix<double> Ydata)
+        public Model(Matrix<double> Xdata, Vector<double> Ydata)
         {
             X = Xdata;
             Y = Ydata ;
