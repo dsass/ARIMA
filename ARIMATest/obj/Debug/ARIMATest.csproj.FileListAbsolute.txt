@@ -1,9 +1,0 @@
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\obj\Debug\ARIMATest.csprojResolveAssemblyReference.cache
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\bin\Debug\ARIMATest.dll
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\bin\Debug\ARIMATest.pdb
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\bin\Debug\ARIMA.exe
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\bin\Debug\ARIMA.pdb
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\obj\Debug\ARIMATest.dll
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\obj\Debug\ARIMATest.pdb
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\bin\Debug\MathNet.Numerics.dll
-C:\Users\Steffani\Documents\Visual Studio 2015\Projects\ARIMATest\bin\Debug\MathNet.Numerics.xml
