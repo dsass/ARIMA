@@ -14,20 +14,24 @@ namespace ARIMA.timeseries.stats
     public class ADF
     {
 
-        Dictionary<int, Dictionary<int, double>> TCritcalVals;
+        private Dictionary<int, Dictionary<int, double>> TCritcalVals;
+        private Vector<double> Xdata;
+        private Vector<double> Ydata;   
 
-        public ADF()
+        public ADF(Vector<double> X, Vector<double> Y)
         {
+            Xdata = X;
+            Ydata = Y;
             populateCritVals(ref TCritcalVals);
         }
 
-        public bool adfuller(Vector<double> X, Vector<double> Y, double sig)
+        public bool adfuller(double sig)
         {
-            Vector<double> Xdiff = Vector<double>.Build.DenseOfArray(math.linalg.ArrayManipulation.diff(X.ToArray()));
-            Vector<double> Xlag = Vector<double>.Build.Dense(X.Count - 1);
-            for (int i = 1; i < X.Count; i++)
+            Vector<double> Xdiff = Vector<double>.Build.DenseOfArray(math.linalg.ArrayManipulation.diff(Xdata.ToArray()));
+            Vector<double> Xlag = Vector<double>.Build.Dense(Xdata.Count - 1);
+            for (int i = 1; i < Xdata.Count; i++)
             {
-                Xlag[i - 1] = X[i];
+                Xlag[i - 1] = Xdata[i];
             }
             Vector<double> Xlagdiff = Vector<double>.Build.DenseOfArray(math.linalg.ArrayManipulation.diff(Xlag.ToArray()));
             Matrix<double> Xcomb = Matrix<double>.Build.Dense(Xlag.Count, 2);
@@ -46,21 +50,21 @@ namespace ARIMA.timeseries.stats
 
             Vector<double> ytest = Vector<double>.Build.Dense(Xlag.Count);
 
-            Y.CopySubVectorTo(ytest, 2, 0, Y.Count - 2);
+            Ydata.CopySubVectorTo(ytest, 2, 0, Ydata.Count - 2);
 
             RegressionModel OLS_instance = new RegressionModel(Xcomb, ytest, "OLS");
 
             Matrix<double> design = OLS_instance.designMatrix(Xcomb);
             Vector<double> coeff = OLS_instance.fit(design, ytest);
 
-            Console.WriteLine(OLS_instance.Rsquared(Xcomb, Y, coeff));
+            Console.WriteLine(OLS_instance.Rsquared(Xcomb, Ydata, coeff));
 
-            double tstat = OLS_instance.testValue(Xcomb, Y, 1, coeff);
+            double tstat = OLS_instance.testValue(Xcomb, Ydata, 1, coeff);
             Console.WriteLine(tstat);
 
-            int abs50 = Math.Abs(X.Count - 50);
-            int abs100 = Math.Abs(X.Count - 100);
-            int abs200 = Math.Abs(X.Count - 200);
+            int abs50 = Math.Abs(Xdata.Count - 50);
+            int abs100 = Math.Abs(Xdata.Count - 100);
+            int abs200 = Math.Abs(Xdata.Count - 200);
 
             int significance = (int)(sig * 100);
 

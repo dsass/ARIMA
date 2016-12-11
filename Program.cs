@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ARIMA.timeseries;
 
 namespace ARIMA
 {
@@ -10,15 +11,16 @@ namespace ARIMA
     {
         static void Main(string[] args)
         {
-            if (args.Length < 1)
-            {
-                Console.WriteLine("ERROR: Please specify a dataset contained in a .csv");
-                return;
-            }
-            string file = args[0];
-            ARIMA.dataprocessing.CSVReader reader = new ARIMA.dataprocessing.CSVReader();
-            string[] headers = reader.getHeaders(file);
-            List<String[]> data = reader.getData(0, 1, 2, file);
+            //if (args.Length < 1)
+            //{
+            //    Console.WriteLine("ERROR: Please specify a dataset contained in a .csv or a .txt file" +
+            //        "structured like a .csv file.");
+            //    return;
+            //}
+            //string file = args[0];
+            string file = "C:/Users/Steffani/Documents/Visual Studio 2015/Projects/ARIMA/data/household_power_consumption.txt";
+            TimeSeries ts = new TimeSeries("Global_active_power", "Global_intensity", file);
+            ts.beginARMAProcess(';', 0.05);
         }
     }
 }

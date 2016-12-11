@@ -8,7 +8,7 @@ namespace ARIMA.dataprocessing
 {
     class CSVReader
     {
-        public string[] getHeaders(string filename)
+        public string[] getHeaders(string filename, char delimiter)
         {
             System.IO.StreamReader filereader = null;
             try
@@ -19,12 +19,12 @@ namespace ARIMA.dataprocessing
                 return null;
             }
             string header = filereader.ReadLine();
-            string[] headers = header.Split(',').Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
+            string[] headers = header.Split(delimiter).Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
             return headers;                    
         }
 
-        // returns the data in a list of string arrays in the form of [date, time, value]
-        public List<string[]> getData(int attrindex, int dateindex, int timeindex, string filename)
+        // returns the data in a list of string arrays in the form of [date, time, xvalue, yvalue]
+        public List<string[]> getData(int xindex, int yindex, int dateindex, int timeindex, string filename, char delimiter)
         {
             System.IO.StreamReader reader = null;
             try
@@ -38,8 +38,8 @@ namespace ARIMA.dataprocessing
             List<String[]> data = new List<String[]>();
             while ((line = reader.ReadLine()) != null)
             {
-                string[] values = line.Split(',').Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
-                string[] linedata = new string[] { values[dateindex], values[timeindex], values[attrindex] };
+                string[] values = line.Split(delimiter).Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
+                string[] linedata = new string[] { values[dateindex], values[timeindex], values[xindex], values[yindex] };
                 data.Add(linedata);
             }
             return data;
