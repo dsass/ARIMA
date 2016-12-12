@@ -20,14 +20,16 @@
 #endregion
 
 using System;
+using System.Numerics;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using ABMath.Miscellaneous;
 using ABMath.ModelFramework.Data;
-using MathNet.Numerics;
+using MathNet.Numerics.Random;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.RandomSources;
+//using MathNet.Numerics.RandomSources;
 
 namespace ABMath.ModelFramework.Models
 {
@@ -38,7 +40,7 @@ namespace ABMath.ModelFramework.Models
     /// using more efficient recursions from Brockwell & Davis.
     /// </summary>
     [Serializable]
-    public class ACFModel : UnivariateTimeSeriesModel, IMLEEstimable, IRealTimePredictable, IExtraFunctionality
+    public class ACFModel : UnivariateTimeSeriesModel, IMLEEstimable, IRealTimePredictable//, IExtraFunctionality
     {
         private const double muScale = 10.0;
         private int maxLag;
@@ -94,9 +96,9 @@ namespace ABMath.ModelFramework.Models
 
         #region IMLEEstimable Members
 
-        public virtual Vector ParameterToCube(Vector param)
+        public virtual Vector<double> ParameterToCube(Vector<double> param)
         {
-            var cube = new Vector(param.Length);
+            var cube = Vector<double>.Build.Dense(param.Count);
 
             cube[0] = Math.Exp(param[0]/muScale)/(1 + Math.Exp(param[0]*1e-5)); // real to [0,1]
             cube[1] = param[1]/(1 + param[1]); // real+ to [0,1]
@@ -107,9 +109,9 @@ namespace ABMath.ModelFramework.Models
             return cube;
         }
 
-        public virtual Vector CubeToParameter(Vector cube)
+        public virtual Vector<double> CubeToParameter(Vector<double> cube)
         {
-            var param = new Vector(2 + maxLag);
+            var param = Vector<double>.Build.Dense(2 + maxLag);
             param[0] = (Math.Log(cube[0]/(1 - cube[0])))*muScale;
             param[1] = cube[1]/(1 - cube[1]);
 
@@ -182,7 +184,7 @@ namespace ABMath.ModelFramework.Models
         }
 
 
-        protected override bool CheckParameterValidity(Vector param)
+        protected override bool CheckParameterValidity(Vector<double> param)
         {
             bool violation = false;
 
@@ -193,10 +195,10 @@ namespace ABMath.ModelFramework.Models
             return !violation;
         }
 
-        public override double LogLikelihood(Vector parameter, double penaltyFactor, bool fillOutputs)
+        public override double LogLikelihood(Vector<double> parameter, double penaltyFactor, bool fillOutputs)
         {
-            Vector allLLs = null;
-            Vector pbak = Parameters; // save the current one
+            Vector<double> allLLs = null;
+            Vector<double> pbak = Parameters; // save the current one
 
             if (values == null)
                 return double.NaN;
@@ -262,23 +264,23 @@ namespace ABMath.ModelFramework.Models
             return llp.LogLikelihood - llp.Penalty * penaltyFactor;            
         }
 
-        protected Vector GetLikelihoodsFromResiduals(double[] res, double[] pvars)
+        protected Vector<double> GetLikelihoodsFromResiduals(double[] res, double[] pvars)
         {
             int nobs = res.Length;
             double alpha = Math.Log(2 * Math.PI * Sigma * Sigma) * 1 / 2.0;
-            var allLLs = new Vector(nobs);
+            var allLLs = Vector<double>.Build.Dense(nobs);
             for (int i = 0; i < nobs; ++i)
                 allLLs[i] = -Math.Log(pvars[i]) / 2 - res[i] * res[i] / (2 * Sigma * Sigma) - alpha;
             return allLLs;
         }
 
 
-        protected override Vector ComputeConsequentialParameters(Vector parameter)
+        protected override Vector<double> ComputeConsequentialParameters(Vector<double> parameter)
         {
             // fill in mean and sigma
-            Vector pbak = Parameters;
+            Vector<double> pbak = Parameters;
             Parameters = parameter;
-            Vector newParms;
+            Vector<double> newParms;
 
             // case 1: standard univariate time series data
             if (ParameterStates[0] == ParameterState.Consequential)
@@ -290,7 +292,7 @@ namespace ABMath.ModelFramework.Models
                 Sigma = Math.Sqrt(vr[0]); // just match variance with the data
             }
 
-            newParms = new Vector(Parameters);
+            newParms = Vector<double>.Build.DenseOfVector(Parameters);
             Parameters = pbak;
 
             return newParms;
@@ -307,17 +309,18 @@ namespace ABMath.ModelFramework.Models
             // (This works for long-memory processes as well, unlike the obvious constructive approach for ARMA models.)
 
             int nn = times.Count;
-            Vector acf = ComputeACF(nn + 1, false);
-            var nu = new Vector(nn);
-            var olda = new Vector(nn);
-            var a = new Vector(nn);
-            var simd = new Vector(nn);
+            Vector<double> acf = ComputeACF(nn + 1, false);
+            var nu = Vector<double>.Build.Dense(nn);
+            var olda = Vector<double>.Build.Dense(nn);
+            var a = Vector<double>.Build.Dense(nn);
+            var simd = Vector<double>.Build.Dense(nn);
 
-            var rs = new AdditiveLaggedFibonacciRandomSource(randomSeed);
-            var sd = new StandardDistribution(rs);
+            var rs = new Palf(randomSeed);
+            var sd = new Normal();//new StandardDistribution(rs);
+            sd.RandomSource = rs;
 
             nu[0] = acf[0]; // nu(0) = 1-step pred. variance of X(0)
-            simd[0] = sd.NextDouble()*Math.Sqrt(nu[0]);
+            simd[0] = sd.RandomSource.NextDouble()*Math.Sqrt(nu[0]);
 
             for (int t = 1; t < nn; ++t)
             {
@@ -339,7 +342,7 @@ namespace ABMath.ModelFramework.Models
                 sum = 0.0;
                 for (int j = 0; j < t; ++j)
                     sum += a[j]*simd[t - 1 - j];
-                simd[t] = sd.NextDouble()*Math.Sqrt(nu[t]) + sum;
+                simd[t] = sd.RandomSource.NextDouble()*Math.Sqrt(nu[t]) + sum;
             }
 
             var simulated = new TimeSeries
@@ -375,11 +378,11 @@ namespace ABMath.ModelFramework.Models
 
         protected void LocalInitializeParameters()
         {
-            Parameters = new Vector(2 + maxLag); // all coeffs are initially zero
+            Parameters = Vector<double>.Build.Dense(2 + maxLag); // all coeffs are initially zero
             Mu = 0;
             Sigma = 1;
 
-            ParameterStates = new ParameterState[Parameters.Length];
+            ParameterStates = new ParameterState[Parameters.Count];
             ParameterStates[0] = ParameterState.Consequential; // mu follows
             ParameterStates[1] = ParameterState.Consequential; // sigma follows from the others
             for (int i = 0; i < maxLag; ++i)
@@ -415,10 +418,10 @@ namespace ABMath.ModelFramework.Models
             //// compute psis in causal expansion,
             //// by phi(B) (1-B)^d psi(B) = theta(B) and match coefficients
             // Vector psis = ComputePsiCoefficients(horizon);
-            var psis = new Vector(horizon + 1);
+            var psis = Vector<double>.Build.Dense(horizon + 1);
 
             // Use approximation (B&D eqn (5.3.24)) as before to get predictive variances
-            var localFmse = new Vector(horizon);
+            var localFmse = Vector<double>.Build.Dense(horizon);
             localFmse[0] = 1.0;
             for (int i = 1; i < horizon; ++i)
                 localFmse[i] = localFmse[i - 1] + psis[i]*psis[i];
@@ -436,9 +439,9 @@ namespace ABMath.ModelFramework.Models
             return predictors;
         }
 
-        public override Vector ComputeACF(int outToLag, bool normalize)
+        public override Vector<double> ComputeACF(int outToLag, bool normalize)
         {
-            var acvf = new Vector(outToLag + 1);
+            var acvf = Vector<double>.Build.Dense(outToLag + 1);
 
             acvf[0] = Sigma;
             for (int i = 0; i < outToLag; ++i)
@@ -477,7 +480,7 @@ namespace ABMath.ModelFramework.Models
             //     based on sigma when this routine was called
 
             int i, n, nobs = startData.Count + forecastHorizon;
-            var xhat = new Vector(Math.Max(nobs + 1, 1));
+            var xhat = Vector<double>.Build.Dense(Math.Max(nobs + 1, 1));
             var localResiduals = new double[nobs];
             rs = new double[nobs + 1];
 
@@ -523,9 +526,9 @@ namespace ABMath.ModelFramework.Models
 
         protected static Complex ComplexPower(Complex c, double pow)
         {
-            double r = Math.Sqrt(c.ModulusSquared);
-            double theta = c.Argument;
-            Complex retval = Complex.FromModulusArgument(Math.Pow(r, pow), theta*pow);
+            double r = Math.Sqrt(Math.Pow(c.Magnitude, 2));
+            double theta = c.Phase;
+            Complex retval = new Complex(Math.Pow(r, pow), theta*pow);
             return retval;
         }
 
@@ -592,7 +595,7 @@ namespace ABMath.ModelFramework.Models
             var hlds = new HaltonSequence(maxLag);
 
             double bestError = double.MaxValue;
-            var bestMAPolynomial = new Polynomial(maxLag);
+            var bestMAPolynomial = Vector<double>.Build.Dense(maxLag);//new Polynomial(maxLag);
 
             for (int i = 0; i < 200000; ++i )
             {

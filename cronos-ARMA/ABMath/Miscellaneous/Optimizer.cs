@@ -27,7 +27,7 @@ namespace ABMath.Miscellaneous
     {
         #region Delegates
 
-        public delegate void OptimizationCallback(Vector param, double functionValue,
+        public delegate void OptimizationCallback(Vector<double> param, double functionValue,
                                                   int percentComplete, bool finished);
 
         #endregion
@@ -35,7 +35,7 @@ namespace ABMath.Miscellaneous
         public OptimizationCallback Callback { get; set; }
         public int StartIteration { get; set; }
 
-        public Vector ArgMin
+        public Vector<double> ArgMin
         { get; protected set; }
 
         public double Minimum
@@ -43,11 +43,11 @@ namespace ABMath.Miscellaneous
 
         public struct Evaluation : IComparable<Evaluation>
         {
-            public Vector argument;
+            public Vector<double> argument;
             public double value;
             public DateTime timeStamp;
 
-            public Evaluation(Vector argument, double value)
+            public Evaluation(Vector<double> argument, double value)
             {
                 this.argument = argument;
                 this.value = value;
@@ -63,8 +63,8 @@ namespace ABMath.Miscellaneous
         public List<Evaluation> Evaluations
         { get; protected set; }
 
-        public delegate double TargetFunction(Vector x);
+        public delegate double TargetFunction(Vector<double> x);
 
-        public abstract void Minimize(TargetFunction targetFunction, List<Vector> initialValues, int maxIterations);
+        public abstract void Minimize(TargetFunction targetFunction, List<Vector<double>> initialValues, int maxIterations);
     }
 }

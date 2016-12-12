@@ -40,7 +40,7 @@ namespace ARIMA.timeseries
 
         public void beginARMAProcess(char delimiter, double siglevel, int len=50)
         {
-            CSVReader reader = new ARIMA.dataprocessing.CSVReader();
+            CSVReader reader = new CSVReader();
             string[] headers = reader.getHeaders(file, delimiter);
             int xindex = -1;
             int yindex = -1;

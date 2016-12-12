@@ -19,16 +19,18 @@
 
 
 using System;
+using System.Numerics;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
 using ABMath.IridiumExtensions;
 using ABMath.Miscellaneous;
 using ABMath.ModelFramework.Data;
-using MathNet.Numerics;
+using MathNet.Numerics.Random;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.RandomSources;
+//using MathNet.Numerics.RandomSources;
 
 namespace ABMath.ModelFramework.Models
 {
@@ -64,15 +66,15 @@ namespace ABMath.ModelFramework.Models
         }
 
 
-        protected static double alpha(int idx, Vector parms) // index starts at 0
+        protected static double alpha(int idx, Vector<double> parms) // index starts at 0
         {
             return parms[idx];
         }
-        protected double beta(int idx, Vector parms) // index starts at 1
+        protected double beta(int idx, Vector<double> parms) // index starts at 1
         {
             return parms[idx + dataOrder];
         }
-        protected double gamma(int idx, Vector parms) // index starts at 1
+        protected double gamma(int idx, Vector<double> parms) // index starts at 1
         {
             return parms[idx + dataOrder + intrinsicOrder];
         }
@@ -107,7 +109,7 @@ namespace ABMath.ModelFramework.Models
             return null;
         }
 
-        protected override bool CheckParameterValidity(Vector param)
+        protected override bool CheckParameterValidity(Vector<double> param)
         {
             bool violation = false;
             switch (modelType)
@@ -120,10 +122,11 @@ namespace ABMath.ModelFramework.Models
                     {
                         betaArray[i] = -beta(i, param);
                     }
-                    var betaP = new Polynomial(betaArray);
+                    //var betaP = new Polynomial(betaArray);
+                    var betaP = Vector<double>.Build.DenseOfArray(betaArray);
                     List<Complex> roots = betaP.Roots();
                     foreach (Complex c in roots)
-                        if (c.Modulus < 1.0 + unitRootBarrier) // it's too close to the unit circle
+                        if (c.Magnitude < 1.0 + unitRootBarrier) // it's too close to the unit circle
                             violation = true;
                     break;
 
@@ -167,11 +170,11 @@ namespace ABMath.ModelFramework.Models
             return Math.Exp(tx) / (1 + Math.Exp(tx));
         }
 
-        public Vector ParameterToCube(Vector parm)
+        public Vector<double> ParameterToCube(Vector<double> parm)
         {
-            if (parm.Length != Parameters.Length)
+            if (parm.Count != Parameters.Count)
                 throw new ArgumentException("Invalid param argument size.");
-            var cube = new Vector(Parameters.Length);
+            var cube = Vector<double>.Build.Dense(Parameters.Count);
 
             switch (modelType)
             {
@@ -208,12 +211,12 @@ namespace ABMath.ModelFramework.Models
             return cube;
         }
 
-        public Vector CubeToParameter(Vector cube)
+        public Vector<double> CubeToParameter(Vector<double> cube)
         {
-            if (cube.Length != Parameters.Length)
+            if (cube.Count != Parameters.Count)
                 throw new ApplicationException("Invalid cube size.");
 
-            var parm = new Vector(Parameters.Length);
+            var parm = Vector<double>.Build.Dense(Parameters.Count);
             switch (modelType)
             {
                 case GARCHType.EGARCH:
@@ -247,7 +250,7 @@ namespace ABMath.ModelFramework.Models
             return parm;
         }
 
-        private double GetVariance(Vector param)
+        private double GetVariance(Vector<double> param)
         {
             double marginalVariance = 0;
             double sum;
@@ -278,7 +281,7 @@ namespace ABMath.ModelFramework.Models
             return marginalVariance;
         }
 
-        private double GetConditionalSig2(int t, TimeSeries localLogReturns, Vector sigmaSquared, Vector param, double marginalVariance)
+        private double GetConditionalSig2(int t, TimeSeries localLogReturns, Vector<double> sigmaSquared, Vector<double> param, double marginalVariance)
         {
             double ls2;
             switch (modelType)
@@ -338,13 +341,13 @@ namespace ABMath.ModelFramework.Models
         /// <param name="sigmaSquared"></param>
         /// <param name="param"></param>
         /// <returns></returns>
-        protected double conditionalLL(int t, Vector sigmaSquared, Vector param, double marginalVariance)
+        protected double conditionalLL(int t, Vector<double> sigmaSquared, Vector<double> param, double marginalVariance)
         {
             var ss = GetConditionalSig2(t, values, sigmaSquared, param, marginalVariance);
             return log1onroot2pi - Math.Log(ss) / 2 - (values[t] * values[t] / (2 * ss));
         }
 
-        public override double LogLikelihood(Vector parameter, double penaltyFactor, bool fillOutputs)
+        public override double LogLikelihood(Vector<double> parameter, double penaltyFactor, bool fillOutputs)
         {
             //var sigmaSquared = new Vector(values.Count);
             //double mVar = GetVariance(parameter);
@@ -352,16 +355,16 @@ namespace ABMath.ModelFramework.Models
             //for (int t = 0; t < values.Count; ++t )
             //    allLLs[t] = conditionalLL(t, sigmaSquared, parameter, mVar);
 
-            Vector pbak = Parameters;
+            Vector<double> pbak = Parameters;
             if (values == null)
                 return double.NaN;
             if (parameter != null)
                 Parameters = parameter;
 
-            var sigmaSquared = new Vector(values.Count);
+            var sigmaSquared = Vector<double>.Build.Dense(values.Count);
             double mVar = GetVariance(Parameters);
             double logLikelihood = 0;
-            var allLLs = new Vector(values.Count);
+            var allLLs = Vector<double>.Build.Dense(values.Count);
 
             for (int t = 0; t < values.Count; ++t)
             {
@@ -391,10 +394,10 @@ namespace ABMath.ModelFramework.Models
             return llp.LogLikelihood - llp.Penalty*penaltyFactor;
         }
 
-        protected override Vector ComputeConsequentialParameters(Vector parameter)
+        protected override Vector<double> ComputeConsequentialParameters(Vector<double> parameter)
         {
             // first make sure that we can handle the consequential params
-            for (int i = 1; i < Parameters.Length ; ++i)
+            for (int i = 1; i < Parameters.Count ; ++i)
                 if (ParameterStates[i] == ParameterState.Consequential)
                     throw new ArgumentException("Invalid consequential parameters.");
 
@@ -428,7 +431,7 @@ namespace ABMath.ModelFramework.Models
                     throw new ApplicationException("Invalid model type.");
             }
 
-            var fixedParms = new Vector(parameter);
+            var fixedParms = Vector<double>.Build.DenseOfVector(parameter);
             fixedParms[0] = alpha_0;
             return fixedParms;
         }
@@ -490,15 +493,16 @@ namespace ABMath.ModelFramework.Models
             int n = times.Count;
             var simulated = new TimeSeries();
 
-            var randomSource = new AdditiveLaggedFibonacciRandomSource(simSeed);
-            var stdnormal = new StandardDistribution(randomSource);
+            var randomSource = new Palf(simSeed);
+            var stdnormal = new Normal();
+            stdnormal.RandomSource = randomSource;
 
             double mVar = GetVariance(Parameters);
-            Vector ss = new Vector(n);
+            Vector<double> ss = Vector<double>.Build.Dense(n);
             for (int i=0 ; i<n ; ++i)
             {
                 double variance = GetConditionalSig2(i, simulated, ss, Parameters, mVar);
-                double simLR = stdnormal.NextDouble()*Math.Sqrt(variance);
+                double simLR = stdnormal.RandomSource.NextDouble()*Math.Sqrt(variance);
                 simulated.Add(times[i], simLR, false);
             }
 
@@ -532,16 +536,16 @@ namespace ABMath.ModelFramework.Models
         private void LocalInitializeParameters()
         {
             // first initialize params
-            Vector tv;
+            Vector<double> tv;
             switch (modelType)
             {
                 case GARCHType.EGARCH:
-                    tv = new Vector(1 + 2 * dataOrder + intrinsicOrder);
+                    tv = Vector<double>.Build.Dense(1 + 2 * dataOrder + intrinsicOrder);
                     tv[0] = -0.2;
                     Parameters = tv;
                     break;
                 case GARCHType.Standard:
-                    tv = new Vector(1 + dataOrder + intrinsicOrder);
+                    tv = Vector<double>.Build.Dense(1 + dataOrder + intrinsicOrder);
                     tv[0] = 1e-4;
                     Parameters = tv;
                     break;
@@ -550,7 +554,7 @@ namespace ABMath.ModelFramework.Models
             }
 
             // then set up default parameter states for estimation
-            var pstates = new ParameterState[Parameters.Length];
+            var pstates = new ParameterState[Parameters.Count];
             for (int i = 0; i < pstates.Length; ++i)
                 pstates[i] = i > 0 ? ParameterState.Free : ParameterState.Consequential;
             ParameterStates = pstates;            
@@ -563,9 +567,9 @@ namespace ABMath.ModelFramework.Models
         }
 
 
-        public override Vector ComputeACF(int maxLag, bool normalize)
+        public override Vector<double> ComputeACF(int maxLag, bool normalize)
         {
-            var retval = new Vector(maxLag+1);
+            var retval = Vector<double>.Build.Dense(maxLag+1);
             retval[0] = normalize ? 1.0 : GetVariance(Parameters);
             return retval;
         }

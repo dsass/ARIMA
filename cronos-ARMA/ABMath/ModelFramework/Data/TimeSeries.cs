@@ -106,15 +106,15 @@ namespace ABMath.ModelFramework.Data
             return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
         }
 
-        public Color GetBackgroundColor()
-        {
-            return Color.GreenYellow;
-        }
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.GreenYellow;
+        //}
 
-        public Icon GetIcon()
-        {
-            return null;
-        }
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public string ToolTipText
         {
@@ -232,16 +232,16 @@ namespace ABMath.ModelFramework.Data
             return (ss/Count - total*total);
         }
 
-        public static Vector GetPACFFrom(Vector ACF)
+        public static Vector<double> GetPACFFrom(Vector<double> ACF)
         {
-            int maxlag = ACF.Length - 1;
+            int maxlag = ACF.Count - 1;
             if (maxlag <= 0)
                 return null;
 
             // compute the sample PACF using the Durbin-Levinson algorithm (p.169 B&D)
-            var PACF = new Vector(maxlag + 1);
-            var phis = new Vector(maxlag + 1);
-            var phis2 = new Vector(maxlag + 1);
+            var PACF = Vector<double>.Build.Dense(maxlag + 1);
+            var phis = Vector<double>.Build.Dense(maxlag + 1);
+            var phis2 = Vector<double>.Build.Dense(maxlag + 1);
             double vi, phinn;
             phis[0] = ACF[1]/ACF[0];
             PACF[0] = 1.0;
@@ -270,9 +270,9 @@ namespace ABMath.ModelFramework.Data
         /// <param name="maxLag">maximum lag to compute autocovariance at</param>
         /// <param name="normalize">if true, then return value is normalized (so it represents autocorrelations)</param>
         /// <returns></returns>
-        public Vector ComputeACF(int maxLag, bool normalize)
+        public Vector<double> ComputeACF(int maxLag, bool normalize)
         {
-            var acf = new Vector(maxLag + 1);
+            var acf = Vector<double>.Build.Dense(maxLag + 1);
 
             int i, j, n = Count;
             if (n == 0)

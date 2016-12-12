@@ -8,16 +8,16 @@ namespace ABMath.ModelFramework.Models
 {
     public class MVDistributionSummary
     {
-        private Matrix sigma;
-        public Vector Mean { get; set; }
+        private Matrix<double> sigma;
+        public Vector<double> Mean { get; set; }
 
-        public Matrix Variance
+        public Matrix<double> Variance
         {
             get { return sigma; }
             set { sigma = value; }
         }
 
-        public Vector Kurtosis { get; set; }
+        public Vector<double> Kurtosis { get; set; }
 
         public DistributionSummary GetMarginal(int component)
         {

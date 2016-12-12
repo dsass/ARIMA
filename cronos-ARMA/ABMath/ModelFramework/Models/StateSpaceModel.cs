@@ -25,11 +25,11 @@ namespace ABMath.ModelFramework.Models
 {
     internal class StateSpaceModel
     {       
-        public Matrix F { get; private set;}    // state transition model
-        public Matrix B { get; private set; }   // control input model
-        public Matrix Q { get; private set; }   // covariance matrix of w
-        public Matrix H { get; private set; }   // observation model        
-        public Matrix R { get; private set; }   // covariance of observation noise 
+        public Matrix<double> F { get; private set;}    // state transition model
+        public Matrix<double> B { get; private set; }   // control input model
+        public Matrix<double> Q { get; private set; }   // covariance matrix of w
+        public Matrix<double> H { get; private set; }   // observation model        
+        public Matrix<double> R { get; private set; }   // covariance of observation noise 
 
         public int StateDimension { get; private set; }
         public int ControlDimension { get; private set; }
@@ -44,7 +44,7 @@ namespace ABMath.ModelFramework.Models
         /// <param name="Q">covariance matrix of state transition model noise</param>
         /// <param name="H">observation model</param>
         /// <param name="R">covariance matrix of observation noise</param>
-        private StateSpaceModel(Matrix F, Matrix B, Matrix Q, Matrix H, Matrix R)
+        private StateSpaceModel(Matrix<double> F, Matrix<double> B, Matrix<double> Q, Matrix<double> H, Matrix<double> R)
         {
             this.F = F;
             this.R = R;

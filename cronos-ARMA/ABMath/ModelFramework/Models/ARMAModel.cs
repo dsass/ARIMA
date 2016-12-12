@@ -20,15 +20,18 @@
 #endregion
 
 using System;
+using System.Numerics;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using ABMath.IridiumExtensions;
 using ABMath.Miscellaneous;
 using ABMath.ModelFramework.Data;
 using MathNet.Numerics;
+using MathNet.Numerics.Random;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.RandomSources;
+//using MathNet.Numerics.RandomSources;
 
 namespace ABMath.ModelFramework.Models
 {
@@ -39,7 +42,7 @@ namespace ABMath.ModelFramework.Models
         private readonly int arOrder;
         private readonly int maOrder;
         private readonly int tailDegreesOfFreedom;           // this is zero if innovations are normal, non-zero means t-distributed with this number of d.o.f.
-        protected Vector autocovariance;
+        protected Vector<double> autocovariance;
 
         [NonSerialized] 
         protected TimeSeries oneStepPredictors; // timestamped to align with what they are predicting
@@ -152,22 +155,24 @@ namespace ABMath.ModelFramework.Models
 
         private const double muScale = 10.0;
 
-        public virtual Vector ParameterToCube(Vector param)
+        public virtual Vector<double> ParameterToCube(Vector<double> param)
         {
-            var cube = new Vector(param.Length);
+            var cube = Vector<double>.Build.Dense(param.Count);
 
             cube[0] = Math.Exp(param[0]/muScale)/(1 + Math.Exp(param[0]/muScale)); // real to [0,1]
             cube[1] = param[1]/(1 + param[1]); // real+ to [0,1]
             cube[2] = param[2] + 0.5; // [-0.5,0.5] to [0,1]
 
-            Vector backup = Parameters;
+            Vector<double> backup = Parameters;
             Parameters = param;
-            Polynomial betaP = GetARPoly();
-            Polynomial betaQ = GetMAPoly();
+            //Polynomial betaP = GetARPoly();
+            //Polynomial betaQ = GetMAPoly();
+            Vector<double> betaP = GetARPoly();
+            Vector<double> betaQ = GetMAPoly();
             Parameters = backup;
 
-            Vector arcube = betaP.MapToCube(UnitRootBarrier);
-            Vector macube = betaQ.MapToCube(UnitRootBarrier);
+            Vector<double> arcube = betaP.MapToCube(UnitRootBarrier);
+            Vector<double> macube = betaQ.MapToCube(UnitRootBarrier);
 
             for (int i = 0; i < arOrder; ++i)
                 cube[3 + i] = arcube[i];
@@ -177,22 +182,22 @@ namespace ABMath.ModelFramework.Models
             return cube;
         }
 
-        public virtual Vector CubeToParameter(Vector cube)
+        public virtual Vector<double> CubeToParameter(Vector<double> cube)
         {
-            var param = new Vector(3 + arOrder + maOrder);
+            var param = Vector<double>.Build.Dense(3 + arOrder + maOrder);
             param[0] = (Math.Log(cube[0]/(1 - cube[0])))*muScale;
             param[1] = cube[1]/(1 - cube[1]);
             param[2] = cube[2] - 0.5;
 
-            var arCube = new Vector(arOrder);
+            var arCube = Vector<double>.Build.Dense(arOrder);
             for (int i = 0; i < arOrder; ++i)
                 arCube[i] = cube[3 + i];
-            var maCube = new Vector(maOrder);
+            var maCube = Vector<double>.Build.Dense(maOrder);
             for (int i = 0; i < maOrder; ++i)
                 maCube[i] = cube[3 + arOrder + i];
 
-            Polynomial betaP = PolynomialExtensions.MapFromCube(arCube, UnitRootBarrier);
-            Polynomial betaQ = PolynomialExtensions.MapFromCube(maCube, UnitRootBarrier);
+            Vector<double> betaP = PolynomialExtensions.MapFromCube(arCube, UnitRootBarrier);
+            Vector<double> betaQ = PolynomialExtensions.MapFromCube(maCube, UnitRootBarrier);
 
             for (int i = 0; i < arOrder; ++i)
                 param[3 + i] = -betaP[i + 1];
@@ -269,33 +274,36 @@ namespace ABMath.ModelFramework.Models
             return string.Format("ARMA{0}({1:0},{2:0})", Environment.NewLine, arOrder, maOrder);
         }
 
-        protected override bool CheckParameterValidity(Vector param)
+        protected override bool CheckParameterValidity(Vector<double> param)
         {
             bool violation = false;
 
-            Vector backup = Parameters;
+            Vector<double> backup = Parameters;
             Parameters = param;
-            Polynomial betaP = GetARPoly();
-            Polynomial betaQ = GetMAPoly();
+            //Polynomial betaP = GetARPoly();
+            //Polynomial betaQ = GetMAPoly();
+            Vector<double> betaP = GetARPoly();
+            Vector<double> betaQ = GetMAPoly();
             Parameters = backup;
 
             // determine roots of the beta polynomial
             List<Complex> roots = betaP.Roots();
             foreach (Complex c in roots)
-                if (c.Modulus < 1.0 + UnitRootBarrier) // it's too close to the unit circle
+                if (c.Magnitude < 1.0 + UnitRootBarrier) // it's too close to the unit circle
                     violation = true;
 
             roots = betaQ.Roots();
             foreach (Complex c in roots)
-                if (c.Modulus < 1.0 + UnitRootBarrier) // it's too close to the unit circle
+                if (c.Magnitude < 1.0 + UnitRootBarrier) // it's too close to the unit circle
                     violation = true;
 
             return !violation;
         }
 
-        public void SetARPolynomial(Polynomial p)
+        //public void SetARPolynomial(Polynomial p)
+        public void SetARPolynomial(Vector<double> p)
         {
-            if (p.Order > AROrder)
+            if (p.Count - 1 > AROrder)
                 throw new ArgumentException("Invalid AR polynomial - incorrect order.");
             if (p[0] != 1.0)
                 throw new ArgumentException("Invalid AR polynomial - first coefficient must be 1.0.");
@@ -303,9 +311,10 @@ namespace ABMath.ModelFramework.Models
                 Parameters[2 + i] = -p[i];
         }
 
-        public void SetMAPolynomial(Polynomial p)
+        //public void SetMAPolynomial(Polynomial p)
+        public void SetMAPolynomial(Vector<double> p)
         {
-            if (p.Order > MAOrder)
+            if (p.Count - 1 > MAOrder)
                 throw new ArgumentException("Invalid MA polynomial - incorrect order.");
             if (p[0] != 1.0)
                 throw new ArgumentException("Invalid MA polynomial - first coefficient must be 1.0.");
@@ -313,36 +322,38 @@ namespace ABMath.ModelFramework.Models
                 Parameters[2 + i + AROrder] = p[i];
         }
 
-        public Polynomial GetMAPolynomial()
+        //public Polynomial GetMAPolynomial()
+        public Vector<double> GetMAPolynomial()
         {
-            var p = new Polynomial(MAOrder);
+            //var p = new Polynomial(MAOrder);
+            var p = Vector<double>.Build.Dense(MAOrder);
             p[0] = 1.0;
             for (int i = 1; i <= MAOrder; ++i)
                 p[i] = MACoeff(i - 1);
             return p;
         }
 
-        protected Vector GetLikelihoodsFromResiduals(double[] res, double[] pvars)
+        protected Vector<double> GetLikelihoodsFromResiduals(double[] res, double[] pvars)
         {
             int nobs = res.Length;
             double alpha = Math.Log(2 * Math.PI * Sigma * Sigma) * 1 / 2.0;
-            var allLLs = new Vector(nobs);
+            var allLLs = Vector<double>.Build.Dense(nobs);
             if (tailDegreesOfFreedom == 0)
                 for (int i = 0; i < nobs; ++i)
                     allLLs[i] = -Math.Log(pvars[i]) / 2 - res[i] * res[i] / (2 * Sigma * Sigma) - alpha;
             else
             {
-                var tdn = new StudentsTDistribution(tailDegreesOfFreedom);
+                var tdn = new StudentT(0, 1, tailDegreesOfFreedom);
                 for (int i = 0; i < nobs; ++i)
-                    allLLs[i] = Math.Log(tdn.ProbabilityDensity(res[i] / Sigma)) - Math.Log(Sigma);
+                    allLLs[i] = Math.Log(tdn.Density(res[i] / Sigma)) - Math.Log(Sigma);
             }
             return allLLs;
         }
 
-        public override double LogLikelihood(Vector parameter, double penaltyFactor, bool fillOutputs)
+        public override double LogLikelihood(Vector<double> parameter, double penaltyFactor, bool fillOutputs)
         {
-            Vector allLLs = null;
-            Vector pbak = Parameters; // save the current one
+            Vector<double> allLLs = null;
+            Vector<double> pbak = Parameters; // save the current one
 
             if (values == null)
                 return double.NaN;
@@ -413,12 +424,12 @@ namespace ABMath.ModelFramework.Models
             return llp.LogLikelihood - llp.Penalty * penaltyFactor;            
         }
 
-        protected override Vector ComputeConsequentialParameters(Vector parameter)
+        protected override Vector<double> ComputeConsequentialParameters(Vector<double> parameter)
         {
             // fill in mean and sigma
-            Vector pbak = Parameters;
+            Vector<double> pbak = Parameters;
             Parameters = parameter;
-            Vector newParms = null;
+            Vector<double> newParms = null;
 
             double[] rs;
             double[] forecs;
@@ -445,13 +456,13 @@ namespace ABMath.ModelFramework.Models
                     }
                     else // for model with t-distribution innovations
                     {
-                        var tdn = new StudentsTDistribution(tailDegreesOfFreedom);
-                        var vres = new Vector(res);
+                        var tdn = new StudentT(0, 1, tailDegreesOfFreedom);
+                        var vres = Vector<double>.Build.DenseOfArray(res);
                         Sigma = tdn.MLEofSigma(vres);
                     }
                 }
 
-                newParms = new Vector(Parameters);
+                newParms = Vector<double>.Build.DenseOfVector(Parameters);
             }
             else
             {
@@ -475,7 +486,7 @@ namespace ABMath.ModelFramework.Models
                     Sigma = Math.Sqrt(ss / ssCount);
                 }
 
-                newParms = new Vector(Parameters);
+                newParms = Vector<double>.Build.DenseOfVector(Parameters);
             }
             Parameters = pbak;
 
@@ -493,17 +504,18 @@ namespace ABMath.ModelFramework.Models
             // (This works for long-memory processes as well, unlike the obvious constructive approach for ARMA models.)
 
             int nn = times.Count;
-            Vector acf = ComputeACF(nn + 1, false);
-            var nu = new Vector(nn);
-            var olda = new Vector(nn);
-            var a = new Vector(nn);
-            var simd = new Vector(nn);
+            Vector<double> acf = ComputeACF(nn + 1, false);
+            var nu = Vector<double>.Build.Dense(nn);
+            var olda = Vector<double>.Build.Dense(nn);
+            var a = Vector<double>.Build.Dense(nn);
+            var simd = Vector<double>.Build.Dense(nn);
 
-            var rs = new AdditiveLaggedFibonacciRandomSource(randomSeed);
-            var sd = new StandardDistribution(rs);
+            var rs = new Palf(randomSeed);
+            var sd = new StudentT();
+            sd.RandomSource = rs;
 
             nu[0] = acf[0]; // nu(0) = 1-step pred. variance of X(0)
-            simd[0] = sd.NextDouble()*Math.Sqrt(nu[0]);
+            simd[0] = sd.RandomSource.NextDouble()*Math.Sqrt(nu[0]);
 
             for (int t = 1; t < nn; ++t)
             {
@@ -525,7 +537,7 @@ namespace ABMath.ModelFramework.Models
                 sum = 0.0;
                 for (int j = 0; j < t; ++j)
                     sum += a[j]*simd[t - 1 - j];
-                simd[t] = sd.NextDouble()*Math.Sqrt(nu[t]) + sum;
+                simd[t] = sd.RandomSource.NextDouble()*Math.Sqrt(nu[t]) + sum;
             }
 
             var simulated = new TimeSeries
@@ -574,18 +586,22 @@ namespace ABMath.ModelFramework.Models
             return Parameters[3 + arOrder + i];
         }
 
-        private Polynomial GetARPoly()
+        //private Polynomial GetARPoly()
+        private Vector<double> GetARPoly()
         {
-            var p = new Polynomial(arOrder);
+            var p = Vector<double>.Build.Dense(arOrder);
+            //var p = new Polynomial(arOrder);
             p[0] = 1.0;
             for (int i = 0; i < arOrder; ++i)
                 p[i + 1] = -ARCoeff(i);
             return p;
         }
 
-        private Polynomial GetMAPoly()
+        //private Polynomial GetMAPoly()
+        private Vector<double> GetMAPoly()
         {
-            var p = new Polynomial(maOrder);
+            //var p = new Polynomial(maOrder);
+            var p = Vector<double>.Build.Dense(maOrder);
             p[0] = 1.0;
             for (int i = 0; i < maOrder; ++i)
                 p[i + 1] = MACoeff(i);
@@ -594,16 +610,16 @@ namespace ABMath.ModelFramework.Models
 
         protected void LocalInitializeParameters()
         {
-            Parameters = new Vector(3 + arOrder + maOrder); // all coeffs are initially zero
+            Parameters = Vector<double>.Build.Dense(3 + arOrder + maOrder); // all coeffs are initially zero
             Mu = 0;
             Sigma = 1;
             FracDiff = 0;
 
-            ParameterStates = new ParameterState[Parameters.Length];
+            ParameterStates = new ParameterState[Parameters.Count];
             ParameterStates[0] = ParameterState.Consequential; // mu follows
             ParameterStates[1] = ParameterState.Consequential; // sigma follows from the others
             ParameterStates[2] = ParameterState.Locked; // locked at 0 by default
-            for (int i = 3; i < Parameters.Length; ++i)
+            for (int i = 3; i < Parameters.Count; ++i)
                 ParameterStates[i] = ParameterState.Free; // only AR and MA coefficients are free  
         }
 
@@ -612,9 +628,9 @@ namespace ABMath.ModelFramework.Models
             LocalInitializeParameters();
         }
 
-        private Vector ComputePsiCoefficients(int length)
+        private Vector<double> ComputePsiCoefficients(int length)
         {
-            var psis = new Vector(length);
+            var psis = Vector<double>.Build.Dense(length);
 
             if (IsShortMemory)
             {
@@ -645,7 +661,7 @@ namespace ABMath.ModelFramework.Models
             int horizon = futureTimes.Count;
 
             // First we need to compute Gamma(0..m) if we haven't already got enough of it
-            if (autocovariance == null || autocovariance.Length < nobs + horizon + 1)
+            if (autocovariance == null || autocovariance.Count < nobs + horizon + 1)
                 autocovariance = ComputeACF(nobs + horizon + 1, false);
 
             // Numerically stable approach: use innovations algorithm if possible
@@ -656,10 +672,10 @@ namespace ABMath.ModelFramework.Models
             //// now compute MSEs of 1...horizon step predictors
             //// compute psis in causal expansion,
             //// by phi(B) (1-B)^d psi(B) = theta(B) and match coefficients
-            Vector psis = ComputePsiCoefficients(horizon);
+            Vector<double> psis = ComputePsiCoefficients(horizon);
 
             // Use approximation (B&D eqn (5.3.24)) as before to get predictive variances
-            var localFmse = new Vector(horizon);
+            var localFmse = Vector<double>.Build.Dense(horizon);
             localFmse[0] = 1.0;
             for (int i = 1; i < horizon; ++i)
                 localFmse[i] = localFmse[i - 1] + psis[i]*psis[i];
@@ -677,7 +693,7 @@ namespace ABMath.ModelFramework.Models
             return predictors;
         }
 
-        public override Vector ComputeACF(int maxLag, bool normalize)
+        public override Vector<double> ComputeACF(int maxLag, bool normalize)
         {
             int i, h, j;
             double tx;
@@ -690,15 +706,15 @@ namespace ABMath.ModelFramework.Models
             while (q>0 && MACoeff(q-1)==0)
                 --q;
 
-            var acvf = new Vector(maxLag + 1);
+            var acvf = Vector<double>.Build.Dense(maxLag + 1);
 
             if (IsShortMemory) // i.e. if it's not fractionally integrated
             {
-                Vector psi = ComputePsiCoefficients(q + 1);
+                Vector<double> psi = ComputePsiCoefficients(q + 1);
 
                 // second step: solve Y-W for $\gamma(0),\ldots,\gamma(p)$
-                var phistuff = new Matrix(p + 1, p + 1);
-                var psistuff = new Vector(p + 1);
+                var phistuff = Matrix<double>.Build.Dense(p + 1, p + 1);
+                var psistuff = Vector<double>.Build.Dense(p + 1);
 
                 for (i = 0; i <= p; ++i)
                     for (j = 0; j <= p; ++j)
@@ -727,7 +743,7 @@ namespace ABMath.ModelFramework.Models
                     psistuff[i] *= Sigma*Sigma;
                 }
 
-                Matrix gammas = phistuff.Solve(psistuff.ToColumnMatrix());
+                Matrix<double> gammas = phistuff.Solve(psistuff.ToColumnMatrix());
 
                 // copy into return array
                 for (i = 0; i <= (p > maxLag ? maxLag : p); ++i)
@@ -754,8 +770,8 @@ namespace ABMath.ModelFramework.Models
             else
             {
                 // fractionally differenced case
-                var psis = new Vector(q + 1);
-                var zetas = new Matrix(p + 1, 2);
+                var psis = Vector<double>.Build.Dense(q + 1);
+                var zetas = Matrix<double>.Build.Dense(p + 1, 2);
                 var tc = new Complex();
                 var tc2 = new Complex();
                 Complex tc3;
@@ -775,7 +791,8 @@ namespace ABMath.ModelFramework.Models
 
                 // get AR polynomial roots
                 List<Complex> roots;
-                var trimmedAR = new Polynomial(p2);
+                //var trimmedAR = new Polynomial(p2);
+                var trimmedAR = Vector<double>.Build.Dense(p2);
                 trimmedAR[0] = 1.0;
                 for (i = 1; i <= p2; ++i)
                     trimmedAR[i] = -ARCoeff(i - 1);
@@ -795,7 +812,7 @@ namespace ABMath.ModelFramework.Models
                             tc *= (roots[i] - roots[j]);
                     tc = 1.0/tc;
                     zetas[i, 0] = tc.Real;
-                    zetas[i, 1] = tc.Imag;
+                    zetas[i, 1] = tc.Imaginary;
                 }
 
                 // compute gamma
@@ -819,15 +836,17 @@ namespace ABMath.ModelFramework.Models
                 {
                     for (j = 0; j < p2; ++j)
                     {
-                        Matrix cMatrix = CFunctionsFor(FracDiff, roots[j].Real, roots[j].Imag,
+                        Matrix<double> cMatrix = CFunctionsFor(FracDiff, roots[j].Real, roots[j].Imaginary,
                                                        p2, p2 + q, 2*q + maxLag + 2);
                         for (l = -q; l <= q; ++l)
                             for (h = 0; h <= maxLag; ++h)
                             {
-                                tc.Real = zetas[j, 0];
-                                tc.Imag = zetas[j, 1];
-                                tc2.Real = cMatrix[h + q - l, 0];
-                                tc2.Imag = cMatrix[h + q - l, 1];
+                                tc = new Complex(zetas[j, 0], zetas[j, 1]);
+                                //tc.Real = zetas[j, 0];
+                                //tc.Imag = zetas[j, 1];
+                                tc2 = new Complex(cMatrix[h + q - l, 0], cMatrix[h + q - l, 1]);
+                                //tc2.Real = cMatrix[h + q - l, 0];
+                                //tc2.Imag = cMatrix[h + q - l, 1];
                                 tc3 = Sigma*Sigma*psis[l < 0 ? -l : l]*tc*tc2;
                                 acvf[h] += tc3.Real; // we know imag. parts will cancel!
                             }
@@ -858,7 +877,7 @@ namespace ABMath.ModelFramework.Models
             //     based on sigma when this routine was called
 
             int i, j, k, n, nobs = startData.Count + forecastHorizon;
-            var xhat = new Vector(Math.Max(nobs + 1, 1));
+            var xhat = Vector<double>.Build.Dense(Math.Max(nobs + 1, 1));
             var localResiduals = new double[nobs];
             double sum;
             rs = new double[nobs + 1];
@@ -868,14 +887,14 @@ namespace ABMath.ModelFramework.Models
                 int m = Math.Max(AROrder, MAOrder);
 
                 // first we need to compute Gamma(0..m)
-                if (autocovariance.Length < m + 1)
+                if (autocovariance.Count < m + 1)
                     throw new ApplicationException("Internal autocovariance not computed to enough lags.");
 
                 // then apply the innovations algorithm to compute $theta_{n,j}$s
                 int minwidth = Math.Max(Math.Max(MAOrder, m - 1), 1);
 
                 //var thetas = new Matrix(nobs, minwidth);
-                var subThetas = new Matrix(minwidth, minwidth);
+                var subThetas = Matrix<double>.Build.Dense(minwidth, minwidth);
 
                 xhat[0] = Mu;
                 rs[0] = KappaFunction(1, 1, m, autocovariance);
@@ -933,7 +952,7 @@ namespace ABMath.ModelFramework.Models
             } // end of short memory case
             else
             {
-                if (autocovariance.Length < nobs + 1)
+                if (autocovariance.Count < nobs + 1)
                     throw new ApplicationException("Internal autocovariance not computed to enough lags.");
 
                 var dl = new DurbinLevinsonPredictor(Mu, autocovariance);
@@ -986,7 +1005,7 @@ namespace ABMath.ModelFramework.Models
         /// <param name="h"></param>
         /// <param name="extent"></param>
         /// <returns></returns>
-        private Matrix CFunctionsFor(double d, double rho_real, double rho_imag,
+        private Matrix<double> CFunctionsFor(double d, double rho_real, double rho_imag,
                                      int p, int h, int extent)
             // returns vector C^*(d,h,rho)...C^*(d,h-extent,rho)
         {
@@ -995,14 +1014,14 @@ namespace ABMath.ModelFramework.Models
             Complex tc;
             var tc2 = new Complex();
             var tc3 = new Complex();
-            var rho = new Complex();
-            rho.Real = rho_real;
-            rho.Imag = rho_imag;
-            var result = new Matrix(extent, 2);
+            var rho = new Complex(rho_real, rho_imag);
+            //rho.Real = rho_real;
+            //rho.Imag = rho_imag;
+            var result = Matrix<double>.Build.Dense(extent, 2);
 
             // Deal with numerical problems as in Doornik & Ooms
             int glen = 2*(extent - 2) + 1, gmid = extent - 2;
-            var gval = new Matrix(glen, 2);
+            var gval = Matrix<double>.Build.Dense(glen, 2);
             double a, c;
 
             // Step 1: compute gval vector
@@ -1010,45 +1029,51 @@ namespace ABMath.ModelFramework.Models
             c = 1 - d + extent - 2;
             a = d + extent - 2;
             tc = HypergeometricFunction_2F1(a, c, rho_real, rho_imag);
-            tc.Real -= 1.0;
+            tc = new Complex(-1.0, tc.Imaginary);
+            //tc.Real -= 1.0;
             tc /= rho; // fix as rho->0 !
             gval[glen - 1, 0] = tc.Real;
-            gval[glen - 1, 1] = tc.Imag;
+            gval[glen - 1, 1] = tc.Imaginary;
 
             // then the rest are computed recursively
             for (i = extent - 3, j = 2; i >= -extent + 2; --i, ++j)
             {
                 c = 1 - d + i;
                 a = d + i;
-                tc.Real = gval[glen - j + 1, 0];
-                tc.Imag = gval[glen - j + 1, 1];
+                //tc.Real = gval[glen - j + 1, 0];
+                //tc.Imag = gval[glen - j + 1, 1];
+                tc = new Complex(gval[glen - j + 1, 0], gval[glen - j + 1, 1]);
                 tc = (a/c)*(1.0 + rho*tc);
                 gval[glen - j, 0] = tc.Real;
-                gval[glen - j, 1] = tc.Imag;
+                gval[glen - j, 1] = tc.Imaginary;
             }
 
             // Step 2: compute C function
             c0 = GammaFunction(1 - 2*d)*GammaFunction(d + h);
             c1 = GammaFunction(1 - d + h)*GammaFunction(1 - d)*GammaFunction(d);
             c0onc1 = c0/c1;
-            tc2.Real = gval[gmid + h, 0];
-            tc2.Imag = gval[gmid + h, 1];
-            tc3.Real = gval[gmid - h, 0];
-            tc3.Imag = gval[gmid - h, 1];
+            tc2 = new Complex(gval[gmid + h, 0], gval[gmid + h, 1]);
+            //tc2.Real = gval[gmid + h, 0];
+            //tc2.Imaginary = gval[gmid + h, 1];
+            tc3 = new Complex(gval[gmid - h, 0], gval[gmid - h, 1]);
+            //tc3.Real = gval[gmid - h, 0];
+            //tc3.Imaginary = gval[gmid - h, 1];
             tc = c0onc1*(ComplexPower(rho, 2*p)*tc2 + ComplexPower(rho, 2*p - 1) + tc3);
             result[0, 0] = tc.Real;
-            result[0, 1] = tc.Imag;
+            result[0, 1] = tc.Imaginary;
             for (i = 1; i < extent; ++i)
             {
                 int lh = h - i;
                 c0onc1 *= (1 - d + lh)/(d + lh);
-                tc2.Real = gval[gmid + h - i, 0];
-                tc2.Imag = gval[gmid + h - i, 1];
-                tc3.Real = gval[gmid - h + i, 0];
-                tc3.Imag = gval[gmid - h + i, 1];
+                //tc2.Real = gval[gmid + h - i, 0];
+                //tc2.Imag = gval[gmid + h - i, 1];
+                tc2 = new Complex(gval[gmid - h + i, 0], gval[gmid - h + i, 1]);
+                tc3 = new Complex(gval[gmid - h + i, 0], gval[gmid - h + i, 1]);
+                //tc3.Real = gval[gmid - h + i, 0];
+                //tc3.Imag = gval[gmid - h + i, 1];
                 tc = c0onc1*(ComplexPower(rho, 2*p)*tc2 + ComplexPower(rho, 2*p - 1) + tc3);
                 result[i, 0] = tc.Real;
-                result[i, 1] = tc.Imag;
+                result[i, 1] = tc.Imaginary;
             }
 
             return result;
@@ -1060,7 +1085,7 @@ namespace ABMath.ModelFramework.Models
             int i, m;
             double magrho = Math.Sqrt(rhoReal*rhoReal + rhoImag*rhoImag);
             double rhostar = 1 - (1 - magrho)/2.0;
-            Complex chro = Complex.FromRealImaginary(rhoReal, rhoImag);
+            Complex chro = new Complex(rhoReal, rhoImag);
             const double tolerance = 0.0001;
 
             // determine how many terms to use
@@ -1094,7 +1119,7 @@ namespace ABMath.ModelFramework.Models
                 localx += 1.0;
             }
 
-            double tx = Fn.GammaLn(localx);
+            double tx = SpecialFunctions.GammaLn(localx);
             return Math.Exp(tx)*multFactor;
         }
 
@@ -1104,9 +1129,9 @@ namespace ABMath.ModelFramework.Models
 
         protected static Complex ComplexPower(Complex c, double pow)
         {
-            double r = Math.Sqrt(c.ModulusSquared);
-            double theta = c.Argument;
-            Complex retval = Complex.FromModulusArgument(Math.Pow(r, pow), theta*pow);
+            double r = Math.Sqrt(Math.Pow(c.Magnitude, 2));
+            double theta = c.Phase;
+            Complex retval = Complex.FromPolarCoordinates(Math.Pow(r, pow), theta*pow);
             return retval;
         }
 
@@ -1117,7 +1142,7 @@ namespace ABMath.ModelFramework.Models
         /// <param name="j"></param>
         /// <param name="m"></param>
         /// <returns></returns>
-        private double KappaFunction(int i, int j, int m, Vector acvf)
+        private double KappaFunction(int i, int j, int m, Vector<double> acvf)
         {
             int m1 = Math.Min(i, j), m2 = Math.Max(i, j), ti, r;
             double sum;
@@ -1156,14 +1181,14 @@ namespace ABMath.ModelFramework.Models
 
         #region Real-Time Prediction Stuff
 
-        private Vector rtacvf;
+        private Vector<double> rtacvf;
         private int rtm;
         private int rtminwidth;
         private int rtn;
-        private Vector rtrs;
-        private Matrix rtSubThetas;
-        private Vector rtvalues;
-        private Vector rtxhat;
+        private Vector<double> rtrs;
+        private Matrix<double> rtSubThetas;
+        private Vector<double> rtvalues;
+        private Vector<double> rtxhat;
 
         public virtual void ResetRealTimePrediction()
         {
@@ -1174,11 +1199,11 @@ namespace ABMath.ModelFramework.Models
             rtminwidth = Math.Max(Math.Max(MAOrder, rtm - 1), 1);
 
             //var thetas = new Matrix(nobs, minwidth);
-            rtSubThetas = new Matrix(rtminwidth, rtminwidth);
+            rtSubThetas = Matrix<double>.Build.Dense(rtminwidth, rtminwidth);
 
-            rtxhat = new Vector(10000);
-            rtrs = new Vector(10000);
-            rtvalues = new Vector(10000);
+            rtxhat = Vector<double>.Build.Dense(10000);
+            rtrs = Vector<double>.Build.Dense(10000);
+            rtvalues = Vector<double>.Build.Dense(10000);
 
             rtn = 0;
             rtxhat[0] = Mu;
@@ -1271,7 +1296,7 @@ namespace ABMath.ModelFramework.Models
         /// In other cases it throws an exception.
         /// </summary>
         /// <param name="acvf"></param>
-        public void EstimateByYuleWalker(double sampleMean, Vector acvf)
+        public void EstimateByYuleWalker(double sampleMean, Vector<double> acvf)
         {
             double s1, s2, phiHat, theta1, theta2, thetaHat;
             const double epsilon = 1e-4;
@@ -1296,7 +1321,8 @@ namespace ABMath.ModelFramework.Models
                             phiHat = -1 + epsilon;
                         Mu = sampleMean;
                         FracDiff = 0.0;
-                        SetARPolynomial(new Polynomial(new[] { 1, -phiHat }));
+                        SetARPolynomial(Vector<double>.Build.DenseOfArray(new[] { 1, -phiHat }));
+                        //SetARPolynomial(new Polynomial(new[] { 1, -phiHat }));
                         Sigma = Math.Sqrt(acvf[0]*(1 - phiHat*phiHat));
                         return;
                     default:
@@ -1320,7 +1346,8 @@ namespace ABMath.ModelFramework.Models
                             thetaHat = 1 - epsilon;
                         if (thetaHat < -1 + epsilon)
                             thetaHat = -1 + epsilon;
-                        SetMAPolynomial(new Polynomial(new[] {1, thetaHat}));
+                        //SetMAPolynomial(new Polynomial(new[] {1, thetaHat}));
+                        SetMAPolynomial(Vector<double>.Build.DenseOfArray(new[] { 1, thetaHat }));
                         Sigma = Math.Sqrt(acvf[1]/thetaHat);
                         FracDiff = 0.0;
                         return;
@@ -1356,8 +1383,10 @@ namespace ABMath.ModelFramework.Models
                             thetaHat = 1 - epsilon;
                         if (thetaHat < -1 + epsilon)
                             thetaHat = -1 + epsilon;
-                        SetMAPolynomial(new Polynomial(new[] { 1, thetaHat }));
-                        SetARPolynomial(new Polynomial(new[] {1, -phiHat}));
+                        //SetMAPolynomial(new Polynomial(new[] { 1, thetaHat }));
+                        //SetARPolynomial(new Polynomial(new[] {1, -phiHat}));
+                        SetMAPolynomial(Vector<double>.Build.DenseOfArray(new[] { 1, thetaHat }));
+                        SetARPolynomial(Vector<double>.Build.DenseOfArray(new[] { 1, -phiHat }));
                         FracDiff = 0.0;
                         if (double.IsNaN(thetaHat))
                             throw new ApplicationException("Invalid value of theta.");

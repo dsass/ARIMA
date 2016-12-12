@@ -18,6 +18,7 @@
 #endregion
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using ABMath.ModelFramework.Data;
@@ -28,7 +29,7 @@ namespace ABMath.ModelFramework.Models
     [Serializable]
     public abstract class TimeSeriesModel : Model
     {
-        public override Vector Parameters { get; set; }
+        public override Vector<double> Parameters { get; set; }
 
         public override int NumInputs()
         {

@@ -7,9 +7,9 @@ namespace ABMath.Miscellaneous
 {
     public class Regression
     {
-        private Vector dependent;
-        private Matrix augmentedExplanatory;
-        private StandardDistribution stdNormal;
+        private Vector<double> dependent;
+        private Matrix<double> augmentedExplanatory;
+        private IUnivariateDistribution stdNormal;
 
         public double Sigma
         {
@@ -17,19 +17,19 @@ namespace ABMath.Miscellaneous
             protected set;
         }
 
-        public Vector BetaHat
+        public Vector<double> BetaHat
         {
             get;
             protected set;
         }
 
-        public Matrix BetaHatCovariance
+        public Matrix<double> BetaHatCovariance
         {
             get;
             protected set;
         }
 
-        public Vector PValues
+        public Vector<double> PValues
         {
             get;
             protected set;
@@ -40,21 +40,23 @@ namespace ABMath.Miscellaneous
             int p = augmentedExplanatory.ColumnCount;
             int n = augmentedExplanatory.RowCount;
 
-            Matrix xt = augmentedExplanatory.Clone();
+            Matrix<double> xt = augmentedExplanatory.Clone();
             xt.Transpose();
-            Vector xty = ((xt * dependent.ToColumnMatrix())).ToVector();
-            Matrix xtx = xt * augmentedExplanatory;
+            Vector<double> xty = ((xt * dependent.ToColumnMatrix())).ToVector();
+            Matrix<double> xtx = xt * augmentedExplanatory;
 
-            Matrix mxty = new Matrix(xty.Length, 1);
-            for (int i = 0; i < xty.Length; ++i)
+            Matrix<double> mxty = Matrix<double>.Build.Dense(xty.Count, 1);
+            for (int i = 0; i < xty.Count; ++i)
                 mxty[i, 0] = xty[i];
 
-            BetaHat = new Vector(p);
+            BetaHat = Vector<double>.Build.Dense(p);
 
-            if (mxty.Norm2()==0)
-                return;
+            //if (mxty.Norm2()==0)
+            if (mxty.L2Norm() == 0)
+            return;
 
-            Matrix bm = xtx.SolveRobust(mxty);
+            Matrix<double> bm = xtx.Solve(mxty);
+               // .SolveRobust(mxty);
 
             for (int i = 0; i < p; ++i)
                 BetaHat[i] = bm[i, 0];
@@ -68,7 +70,7 @@ namespace ABMath.Miscellaneous
             // now compute approximate p-values
             Sigma = Math.Sqrt(resids.Variance()) * n / (n - p);
             BetaHatCovariance = Sigma * Sigma * xtx.Inverse();
-            PValues = new Vector(augmentedExplanatory.ColumnCount);
+            PValues = Vector<double>.Build.Dense(augmentedExplanatory.ColumnCount);
             for (int i = 0; i < augmentedExplanatory.ColumnCount; ++i)
             {
                 double x = Math.Abs(BetaHat[i]) / Math.Sqrt(BetaHatCovariance[i, i]);
@@ -76,14 +78,16 @@ namespace ABMath.Miscellaneous
             }
         }
 
-        public Regression(Vector dependent, Matrix explanatory, bool addConstant, bool getBetaHatOnly)
+        public Regression(Vector<double> dependent, Matrix<double> explanatory, bool addConstant, bool getBetaHatOnly)
         {
-            stdNormal = new StandardDistribution();
+            //stdNormal = new StandardDistribution();
+
+            stdNormal = new Normal();
 
             this.dependent = dependent;
             if (addConstant)
             {
-                augmentedExplanatory = new Matrix(explanatory.RowCount, explanatory.ColumnCount + 1);
+                augmentedExplanatory = Matrix<double>.Build.Dense(explanatory.RowCount, explanatory.ColumnCount + 1);
                 for (int i = 0; i < explanatory.RowCount; ++i)
                 {
                     augmentedExplanatory[i, 0] = 1.0;
@@ -97,16 +101,17 @@ namespace ABMath.Miscellaneous
             Recompute(getBetaHatOnly);
         }
 
-        public Regression(Vector dependent, Matrix explanatory, Vector weights, bool addConstant, bool getBetaHatOnly)
+        public Regression(Vector<double> dependent, Matrix<double> explanatory, Vector<double> weights, bool addConstant, bool getBetaHatOnly)
         {
             // to perform weighted regression, we create modified versions of 
-            stdNormal = new StandardDistribution();
+            //stdNormal = new StandardDistribution();
 
-            this.dependent = new Vector(dependent.Length);
-            for (int i = 0; i < dependent.Length; ++i)
+            stdNormal = new Normal();
+            this.dependent = Vector<double>.Build.Dense(dependent.Count);
+            for (int i = 0; i < dependent.Count; ++i)
                 this.dependent[i] = dependent[i]*Math.Sqrt(weights[i]);
 
-            augmentedExplanatory = new Matrix(explanatory.RowCount, explanatory.ColumnCount + (addConstant ? 1 : 0));
+            augmentedExplanatory = Matrix<double>.Build.Dense(explanatory.RowCount, explanatory.ColumnCount + (addConstant ? 1 : 0));
             if (addConstant)
                 for (int i = 0; i < explanatory.RowCount; ++i)
                 {

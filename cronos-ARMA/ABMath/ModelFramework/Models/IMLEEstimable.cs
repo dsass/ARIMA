@@ -25,7 +25,7 @@ namespace ABMath.ModelFramework.Models
     public interface IMLEEstimable
     {
         void CarryOutPreMLEComputations();
-        Vector ParameterToCube(Vector param);
-        Vector CubeToParameter(Vector cube);
+        Vector<double> ParameterToCube(Vector<double> param);
+        Vector<double> CubeToParameter(Vector<double> cube);
     }
 }

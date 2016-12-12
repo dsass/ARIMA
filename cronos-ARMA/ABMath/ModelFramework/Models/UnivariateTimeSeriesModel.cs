@@ -19,6 +19,7 @@
 
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using ABMath.ModelFramework.Data;
@@ -63,7 +64,7 @@ namespace ABMath.ModelFramework.Models
                 throw new ApplicationException("Invalid data connection.");
         }
 
-        public abstract Vector ComputeACF(int maxLag, bool normalize);
+        public abstract Vector<double> ComputeACF(int maxLag, bool normalize);
 
         public override List<Type> GetAllowedInputTypesFor(int socket)
         {

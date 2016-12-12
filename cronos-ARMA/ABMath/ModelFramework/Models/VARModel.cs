@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using ABMath.IridiumExtensions;
@@ -34,13 +35,13 @@ namespace ABMath.ModelFramework.Models
     [Serializable]
     public class VARModel : MVTimeSeriesModel, IMoMEstimable
     {
-        protected Vector mu;
+        protected Vector<double> mu;
 
         [NonSerialized] private MVTimeSeries oneStepPredictors = null;
         [NonSerialized] private MVTimeSeries oneStepPredictorsAtAvail = null;
         protected int order;
-        protected Matrix[] Phi;
-        protected Matrix Sigma;
+        protected Matrix<double>[] Phi;
+        protected Matrix<double> Sigma;
 
         public VARModel(int order, int dimension)
         {
@@ -74,12 +75,12 @@ namespace ABMath.ModelFramework.Models
             }
         }
 
-        public override Vector Parameters
+        public override Vector<double> Parameters
         {
             get
             {
                 // build vector from matrix parameters
-                var parmVec = new Vector(NumParameters);
+                var parmVec = Vector<double>.Build.Dense(NumParameters);
 
                 for (int i = 0; i < dimension; ++i)
                     parmVec[i] = mu[i];
@@ -99,7 +100,7 @@ namespace ABMath.ModelFramework.Models
             set
             {
                 // unbundle from the vector into all the parameters
-                if (value.Length != NumParameters)
+                if (value.Count != NumParameters)
                     throw new ArgumentException("Parameter vector is incorrect length.");
 
                 for (int i = 0; i < dimension; ++i)
@@ -124,8 +125,8 @@ namespace ABMath.ModelFramework.Models
         /// </summary>
         public void FitByMethodOfMoments()
         {
-            Matrix[] gammas = mvts.ComputeACF(order + 1, false);
-            var gammasT = new Matrix[gammas.Length];
+            Matrix<double>[] gammas = mvts.ComputeACF(order + 1, false);
+            var gammasT = new Matrix<double>[gammas.Length];
             for (int i = 0; i < gammas.Length; ++i)
             {
                 gammasT[i] = gammas[i].Clone();
@@ -139,20 +140,20 @@ namespace ABMath.ModelFramework.Models
                     tempmu[i] = mu[i];
             mu = tempmu;
 
-            Matrix big = gammas[0];
-            Matrix little = gammasT[1];
+            Matrix<double> big = gammas[0];
+            Matrix<double> little = gammasT[1];
             for (int i = 1; i < order; ++i)
             {
-                Matrix rightPiece = gammas[1];
+                Matrix<double> rightPiece = gammas[1];
                 for (int j = 1; j < i; ++j)
-                    rightPiece = MatrixExtensions.CreateBlockMatrixVertically(gammas[j + 1], rightPiece);
-                Matrix rightPieceT = rightPiece.Clone();
+                    rightPiece = MatrixExtensionsI.CreateBlockMatrixVertically(gammas[j + 1], rightPiece);
+                Matrix<double> rightPieceT = rightPiece.Clone();
                 rightPieceT.Transpose();
-                big = MatrixExtensions.CreateBlockMatrixFrom(big, rightPiece, rightPieceT, gammas[0]);
-                little = MatrixExtensions.CreateBlockMatrixVertically(little, gammasT[i + 1]);
+                big = MatrixExtensionsI.CreateBlockMatrixFrom(big, rightPiece, rightPieceT, gammas[0]);
+                little = MatrixExtensionsI.CreateBlockMatrixVertically(little, gammasT[i + 1]);
             }
 
-            Matrix allPhis = big.Solve(little);
+            Matrix<double> allPhis = big.Solve(little);
 
             for (int i = 0; i < order; ++i)
             {
@@ -225,7 +226,7 @@ namespace ABMath.ModelFramework.Models
 
 
         // Only used for MLE, so we don't need to fill this in.
-        protected override bool CheckParameterValidity(Vector param)
+        protected override bool CheckParameterValidity(Vector<double> param)
         {
             return true;
         }
@@ -235,15 +236,28 @@ namespace ABMath.ModelFramework.Models
         /// </summary>
         /// <param name="t"></param>
         /// <returns></returns>
-        private Vector OneStepPredictor(int t)
+        private Vector<double> OneStepPredictor(int t)
         {
-            var pred = new Matrix(dimension, 1);
-            Matrix vmu = mu.ToColumnMatrix();
-            Matrix tv;
+            var pred = Matrix<double>.Build.Dense(dimension, 1);
+            Matrix<double> vmu = mu.ToColumnMatrix();
+            Matrix<double> tv;
             for (int i = 1; i <= order; ++i)
             {
                 if (t - i >= 0)
-                    tv = new Matrix(mvts[t - i], dimension);
+                {
+                    tv = Matrix<double>.Build.Dense(mvts[t - i].Length, dimension);
+                    int row = -1;
+                    for (int j = 0; j < mvts[t - i].Length; j++)
+                    {
+                        if (i % dimension == 0)
+                        {
+                            row++;
+                        }
+                        tv[row, i] = mvts[t - i][i];
+                    }
+                }
+                    
+                        //tv = new Matrix(mvts[t - i], dimension);
                 else
                     tv = mu.ToColumnMatrix();
                 pred += Phi[i - 1]*(tv - vmu);
@@ -251,12 +265,12 @@ namespace ABMath.ModelFramework.Models
             return pred.ToVector() + mu;
         }
 
-        public override double LogLikelihood(Vector parameter, double penaltyFactor, bool fillOutputs)
+        public override double LogLikelihood(Vector<double> parameter, double penaltyFactor, bool fillOutputs)
         {
             if (mvts == null)
                 return double.NaN;
 
-            Vector paramBak = Parameters;
+            Vector<double> paramBak = Parameters;
 
             if (parameter != null)
                 Parameters = parameter;
@@ -265,8 +279,8 @@ namespace ABMath.ModelFramework.Models
             double logLike = 0.0;
             for (int t = 0; t < mvts.Count; ++t)
             {
-                Vector pred = OneStepPredictor(t);
-                Vector resid = mvts[t] - pred;
+                Vector<double> pred = OneStepPredictor(t);
+                Vector<double> resid = Vector<double>.Build.DenseOfArray(mvts[t]) - pred;
                 logLike += mvn.LogProbabilityDensity(resid);
             }
 
@@ -294,15 +308,15 @@ namespace ABMath.ModelFramework.Models
 
                 for (int t = 0; t < mvts.Count; ++t)
                 {
-                    Vector pred = OneStepPredictor(t);
-                    Vector resid = mvts[t] - pred;
+                    Vector<double> pred = OneStepPredictor(t);
+                    Vector<double> resid = Vector<double>.Build.DenseOfArray(mvts[t]) - pred;
 
-                    rs.Add(mvts.TimeStamp(t), mvn.Standardize(resid), false);
-                    oneStepPredictors.Add(mvts.TimeStamp(t), pred, false);
+                    rs.Add(mvts.TimeStamp(t), mvn.Standardize(resid).ToArray(), false);
+                    oneStepPredictors.Add(mvts.TimeStamp(t), pred.ToArray(), false);
                     if (t > 0)
-                        oneStepPredictorsAtAvail.Add(mvts.TimeStamp(t - 1), pred, false);
+                        oneStepPredictorsAtAvail.Add(mvts.TimeStamp(t - 1), pred.ToArray(), false);
                 }
-                oneStepPredictorsAtAvail.Add(mvts.TimeStamp(mvts.Count - 1), OneStepPredictor(mvts.Count), false);
+                oneStepPredictorsAtAvail.Add(mvts.TimeStamp(mvts.Count - 1), OneStepPredictor(mvts.Count).ToArray(), false);
 
                 Residuals = rs;
             }
@@ -313,7 +327,7 @@ namespace ABMath.ModelFramework.Models
             return logLike;
         }
 
-        protected override Vector ComputeConsequentialParameters(Vector parameter)
+        protected override Vector<double> ComputeConsequentialParameters(Vector<double> parameter)
         {
             return parameter;
         }
@@ -330,11 +344,11 @@ namespace ABMath.ModelFramework.Models
 
         private void LocalInitializeParameters()
         {
-            mu = new Vector(dimension);
-            Phi = new Matrix[order];
+            mu = Vector<double>.Build.Dense(dimension);
+            Phi = new Matrix<double>[order];
             for (int i = 0; i < order; ++i)
-                Phi[i] = new Matrix(dimension, dimension);
-            Sigma = Matrix.Identity(dimension, dimension);
+                Phi[i] = Matrix<double>.Build.Dense(dimension, dimension);
+            Sigma = Matrix<double>.Build.DenseIdentity(dimension, dimension);
 
             ParameterStates = new ParameterState[NumParameters];
         }

@@ -21,29 +21,32 @@
 using System;
 using MathNet.Numerics.Distributions;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.RandomSources;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using MathNet.Numerics.Random;
 
 namespace ABMath.IridiumExtensions
 {
     public class MVNormalDistribution
     {
-        private readonly StandardDistribution stdnormal;
+        //private readonly StandardDistribution stdnormal;
+        private readonly Normal stdnormal;
 
-        public RandomSource RandomSource
+        //public RandomSource RandomSource
+        public Random RandomSource
         {
             get { return stdnormal.RandomSource; }
             set { stdnormal.RandomSource = value; }
         }
 
-        private Matrix sigma;
-        private Matrix sqrtSigma;
-        private Matrix sqrtSigmaInverse;
-        private Matrix invSigma;
+        private Matrix<double> sigma;
+        private Matrix<double> sqrtSigma;
+        private Matrix<double> sqrtSigmaInverse;
+        private Matrix<double> invSigma;
         private double detSigma;
-        private Vector mu;
+        private Vector<double> mu;
         private int dimension;
 
-        public Matrix Sigma
+        public Matrix<double> Sigma
         {
             get { return sigma; }
             set
@@ -53,26 +56,28 @@ namespace ABMath.IridiumExtensions
             }
         }
 
-        public Vector Mu
+        public Vector<double> Mu
         {
             get { return mu; }
             set
             {
                 mu = value;
-                dimension = value.Length;
+                dimension = value.Count;
             }
         }
 
         public MVNormalDistribution() // constructor
         {
-            stdnormal = new StandardDistribution();
+            //stdnormal = new StandardDistribution();
+            stdnormal = new Normal();
         }
 
 
         private void ComputeCholeskyDecomp()
         {
-            var cd = new CholeskyDecomposition(Sigma);
-            sqrtSigma = cd.TriangularFactor;
+            var cd = Sigma.Cholesky();
+            cd.Solve(Sigma);
+            sqrtSigma = cd.Factor;
             detSigma = Sigma.Determinant();
             if (detSigma != 0)
             {
@@ -86,27 +91,27 @@ namespace ABMath.IridiumExtensions
             }
         }
 
-        public double LogProbabilityDensity(Vector x)
+        public double LogProbabilityDensity(Vector<double> x)
         {
-            Matrix tm1 = (x - mu).ToColumnMatrix();
+            Matrix<double> tm1 = (x - mu).ToColumnMatrix();
             tm1.Transpose();
-            Matrix tm2 = (tm1*invSigma*(x - mu).ToColumnMatrix());
+            Matrix<double> tm2 = (tm1*invSigma*(x - mu).ToColumnMatrix());
             double retval = -0.5*tm2[0, 0] - 0.5*Math.Log(detSigma) - dimension/2.0*Math.Log(2*Math.PI);
             return retval;
         }
         
-        public Vector NextVector()
+        public Vector<double> NextVector()
         {
-            var retval = new Vector(dimension);
+            var retval = Vector<double>.Build.Dense(dimension);
             for (int i = 0; i < dimension; ++i)
-                retval[i] = stdnormal.NextDouble();
+                retval[i] = stdnormal.RandomSource.NextDouble();
             retval = sqrtSigma.MultiplyBy(retval);
             for (int i = 0; i < dimension; ++i)
                 retval[i] += mu[i];
             return retval;
         }
 
-        public Vector Standardize(Vector v)
+        public Vector<double> Standardize(Vector<double> v)
         {
             if (sqrtSigmaInverse == null)
                 throw new ApplicationException("Cannot standardize a MV normal vector when its covariance matrix is singular.");

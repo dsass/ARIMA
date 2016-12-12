@@ -78,9 +78,9 @@ namespace ABMath.Miscellaneous
         /// iterates through the Halton low-discrepancy sequence
         /// </summary>
         /// <returns>a new dimension x 1 matrix containing the next element in the sequence</returns>
-        public Vector GetNext()
+        public Vector<double> GetNext()
         {
-            var retval = new Vector(dimension);
+            var retval = Vector<double>.Build.Dense(dimension);
             for (int i = 0; i < dimension; ++i)
                 retval[i] = vdcGenerators[i].GetNext();
             return retval;

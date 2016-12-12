@@ -12,11 +12,11 @@ namespace ABMath.IridiumExtensions
         /// <param name="dn"></param>
         /// <param name="data">data to be used</param>
         /// <returns></returns>
-        public static double MLEofSigma(this StudentsTDistribution dn, Vector data)
+        public static double MLEofSigma(this StudentT dn, Vector<double> data)
         {
-            double sd2 = data.Variance();
-            int n = data.Length;
-            int dof = dn.DegreesOfFreedom;
+            double sd2 = VectorExtensions.Variance(data);
+            int n = data.Count;
+            int dof = (int)dn.DegreesOfFreedom;
 
             // now use iterative recursion
             for (int iteration = 0; iteration < 20; ++iteration)

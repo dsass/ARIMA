@@ -20,30 +20,33 @@
 
 using System;
 using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Factorization;
 
 namespace ABMath.IridiumExtensions
 {
     public class PrincipalComponents
     {
-        private Matrix sampleCov;
-        private EigenvalueDecomposition covDecomposition;
+        private Matrix<double> sampleCov;
+        private Evd<double> covDecomposition;
 
-        public Vector SortedEigenvalues
+        public Vector<double> SortedEigenvalues
         {
             get; protected set;
         }
 
-        public Matrix SortedComponents
+        public Matrix<double> SortedComponents
         {
             get; protected set;
         }
 
-        public PrincipalComponents(Matrix data)
+        public PrincipalComponents(Matrix<double> data)
         {
-            Matrix dt = data.Clone();
+            Matrix<double> dt = data.Clone();
             dt.Transpose();
             sampleCov = dt*data*(1.0/data.RowCount);
-            covDecomposition = new EigenvalueDecomposition(sampleCov);
+            //covDecomposition = new EigenvalueDecomposition(sampleCov);
+            covDecomposition = sampleCov.Evd();
+            covDecomposition.Solve(sampleCov);
 
             var evs = new double[sampleCov.RowCount];
             var indices = new int[sampleCov.RowCount];
@@ -54,13 +57,13 @@ namespace ABMath.IridiumExtensions
             }
             Array.Sort(evs, indices);
 
-            var permutation = new Matrix(sampleCov.RowCount, sampleCov.RowCount);
+            var permutation = Matrix<double>.Build.Dense(sampleCov.RowCount, sampleCov.RowCount);
             for (int i=0 ;i<sampleCov.RowCount ; ++i)
                 permutation[indices[i], i] = 1.0;
 
-            Matrix v = covDecomposition.EigenVectors;
+            Matrix<double> v = covDecomposition.EigenVectors;
             SortedComponents = v*permutation;
-            SortedEigenvalues = new Vector(evs);
+            SortedEigenvalues = Vector<double>.Build.DenseOfArray(evs);
         }
     }
 }

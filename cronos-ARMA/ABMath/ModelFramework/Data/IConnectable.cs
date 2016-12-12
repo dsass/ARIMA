@@ -46,8 +46,8 @@ namespace ABMath.ModelFramework.Data
         // visual display properties
         string GetDescription();
         string GetShortDescription();
-        Color GetBackgroundColor();
-        Icon GetIcon();
+        //Color GetBackgroundColor();
+        //Icon GetIcon();
 
         string ToolTipText { get; set; }
     }

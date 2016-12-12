@@ -21,35 +21,39 @@ using System;
 using System.Collections.Generic;
 using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using System.Numerics;
 
 namespace ABMath.IridiumExtensions
 {
     public static class PolynomialExtensions
     {
         private const double epsilon = 1e-8;
+        //Vector stands for the coefficients of a polynomial
 
-        public static List<Complex> Roots(this Polynomial p)
+        public static List<Complex> Roots(this Vector<double> p)
         {
             var allRoots = new List<Complex>();
 
             // build matrix whose char. polynomial is the target polynomial
-            int sz = p.Order;
+            int sz = p.Count - 1;
             while (Math.Abs(p[sz])<epsilon && sz>0)
                 --sz;
             if (sz > 0) // it has to be bigger than zero to have any roots at all
             {
                 double highestCoeff = p[sz];
-                var m = new Matrix(sz, sz);
+                var m = Matrix<double>.Build.Dense(sz, sz);
                 for (int i = 0; i < sz - 1; ++i)
                     m[i, i + 1] = 1.0;
                 for (int i = 0; i < sz; ++i)
                     m[sz - 1, i] = -p[i] / highestCoeff;
 
-                var ed = new EigenvalueDecomposition(m);
+                Evd<double> ed = m.Evd();//new EigenvalueDecomposition(m);
+                ed.Solve(m);
 
                 for (int i = 0; i < sz; ++i)
                 {
-                    var c = new Complex {Real = ed.RealEigenvalues[i], Imag = ed.ImagEigenvalues[i]};
+                    var c = new Complex(ed.EigenValues[i].Real, ed.EigenValues[i].Imaginary);
                     allRoots.Add(c);
                 }
             }
@@ -64,9 +68,9 @@ namespace ABMath.IridiumExtensions
         public static void StripConjugates(List<Complex> roots)
         {
             for (int i=0 ; i<roots.Count ; ++i)
-                if (Math.Abs(roots[i].Imag) > epsilon) // then we need to find the conjugate
+                if (Math.Abs(roots[i].Imaginary) > epsilon) // then we need to find the conjugate
                     for (int j=i+1 ; j<roots.Count ; ++j)
-                        if ((roots[j].Conjugate - roots[i]).Modulus < epsilon)
+                        if ((Complex.Conjugate(roots[j]) - roots[i]).Magnitude < epsilon)
                         {
                             roots.RemoveAt(j);
                             j = roots.Count;
@@ -78,45 +82,45 @@ namespace ABMath.IridiumExtensions
         /// zero-order coefficient = 1.0
         /// </summary>
         /// <returns></returns>
-        public static Polynomial MapFromCube(Vector originalCube, double barrier)
+        public static Vector<double> MapFromCube(Vector<double> originalCube, double barrier)
         {
             var invRoots = new List<Complex>();
 
-            Vector cube = originalCube*2-1;
+            Vector<double> cube = originalCube*2-1;
             
-            for (int i=0 ; i<cube.Length ; )
+            for (int i=0 ; i<cube.Count ; )
             {
-                if (i<cube.Length-1) // we can grab a pair
+                if (i<cube.Count-1) // we can grab a pair
                 {
                     double x1 = cube[i];
                     double y1 = cube[i + 1];
                     if (y1 > 0) // it's a conjugate pair
                     {
-                        invRoots.Add(Complex.FromRealImaginary(x1, y1));
-                        invRoots.Add(Complex.FromRealImaginary(x1, -y1));
+                        invRoots.Add(new Complex(x1, y1));
+                        invRoots.Add(new Complex(x1, -y1));
                     }
                     else
                     {
-                        invRoots.Add(Complex.FromRealImaginary(x1, 0));
-                        invRoots.Add(Complex.FromRealImaginary(2*y1+1, 0));
+                        invRoots.Add(new Complex(x1, 0));
+                        invRoots.Add(new Complex(2*y1+1, 0));
                     }
                     i += 2;
                 }
                 else
                 {
-                    invRoots.Add(Complex.FromRealImaginary(cube[i], 0));
+                    invRoots.Add(new Complex(cube[i], 0));
                     ++i;
                 }
             }
             for (int i=0 ; i<invRoots.Count ; ++i)
             {
                 // make sure norm is less than 1-epsilon, if not, invert
-                double r = invRoots[i].Modulus;
-                double theta = invRoots[i].Argument;
+                double r = invRoots[i].Magnitude;
+                double theta = invRoots[i].Phase;
                 if (r > 1-barrier)
                 {
                     r = 1.0/(r + 2*barrier);
-                    invRoots[i] = Complex.FromModulusArgument(r, theta);
+                    invRoots[i] = new Complex(r, theta);
                 }
             }
 
@@ -127,9 +131,9 @@ namespace ABMath.IridiumExtensions
                 for (int j = invRoots.Count ; j > 0; --j)
                     retval[j] -= invRoots[i]*retval[j - 1];
 
-            var p = new Polynomial(invRoots.Count);
+            var p = Vector<double>.Build.Dense(invRoots.Count);//new Polynomial(invRoots.Count);
             for (int i=0 ; i<=invRoots.Count ; ++i)
-                if (Math.Abs(retval[i].Imag) > epsilon)
+                if (Math.Abs(retval[i].Imaginary) > epsilon)
                     throw new ApplicationException("Unmapped polynomial has complex coefficients.");
                 else
                     p[i] = retval[i].Real;
@@ -142,18 +146,18 @@ namespace ABMath.IridiumExtensions
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public static Vector MapToCube(this Polynomial p, double barrier)
+        public static Vector<double> MapToCube(this Vector<double> p, double barrier)
         {
             var allRoots = p.Roots();
             StripConjugates(allRoots);
-            var cube = new Vector(p.Order);
+            var cube = Vector<double>.Build.Dense(p.Count - 1);
             var complexRoots = new List<Complex>();
             var realRoots = new List<double>();
 
             int j = 0;
 
             for (int i = 0; i < allRoots.Count; ++i)
-                if (Math.Abs(allRoots[i].Imag) > epsilon)
+                if (Math.Abs(allRoots[i].Imaginary) > epsilon)
                     complexRoots.Add(1.0/allRoots[i]);
                 else
                     realRoots.Add(1.0/allRoots[i].Real);
@@ -161,7 +165,7 @@ namespace ABMath.IridiumExtensions
             for (int i = 0 ; i < complexRoots.Count; ++i)
             {
                 cube[j] = complexRoots[i].Real;
-                cube[j + 1] = Math.Abs(complexRoots[i].Imag);
+                cube[j + 1] = Math.Abs(complexRoots[i].Imaginary);
                 j += 2;
             }
 

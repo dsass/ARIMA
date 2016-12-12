@@ -35,9 +35,9 @@ namespace ABMath.Miscellaneous
         /// </summary>
         /// <param name="targetFunction"></param>
         /// <param name="initialValues"></param>
-        public override void Minimize(TargetFunction targetFunction, List<Vector> initialValues, int maxIterations)
+        public override void Minimize(TargetFunction targetFunction, List<Vector<double>> initialValues, int maxIterations)
         {
-            int dimension = initialValues[0].Length;
+            int dimension = initialValues[0].Count;
             if (initialValues.Count != dimension + 1)
                 throw new ArgumentException("Initial value count must be " + (dimension + 1) +
                                             " so that a simplex can be defined.");
@@ -55,7 +55,7 @@ namespace ABMath.Miscellaneous
             // now iterate
             for (int iter = 0; iter < maxIterations; ++iter)
             {
-                Vector reflecPoint;
+                Vector<double> reflecPoint;
                 double reflectEval;
 
                 // 1. sort by values
@@ -72,7 +72,7 @@ namespace ABMath.Miscellaneous
                 }
 
                 // 2. compute center of mass of every point except the worst one
-                var centerOfMass = new Vector(dimension);
+                var centerOfMass = Vector<double>.Build.Dense(dimension);
                 for (int i = 0; i < dimension; ++i )
                     centerOfMass += simplex[i].argument;
                 centerOfMass /= dimension;
@@ -95,7 +95,7 @@ namespace ABMath.Miscellaneous
                     else
                     {
                         // try expanding
-                        Vector expandPoint = centerOfMass + gamma*(centerOfMass - simplex[dimension].argument);
+                        Vector<double> expandPoint = centerOfMass + gamma*(centerOfMass - simplex[dimension].argument);
                         double expandEval = targetFunction(expandPoint);
 
                         if (expandEval < reflectEval)
@@ -106,7 +106,7 @@ namespace ABMath.Miscellaneous
                     }
                 else // we may contract
                 {
-                    Vector xc = simplex[dimension].argument + rho*(centerOfMass - simplex[dimension].argument);
+                    Vector<double> xc = simplex[dimension].argument + rho*(centerOfMass - simplex[dimension].argument);
                     double xcEval = targetFunction(xc);
                     if (xcEval < simplex[dimension].value)
                         simplex[dimension] = new Evaluation(xc, xcEval);

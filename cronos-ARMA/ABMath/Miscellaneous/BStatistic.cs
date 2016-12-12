@@ -15,20 +15,20 @@ namespace ABMath.Miscellaneous
         {
             public int order;
             public string xmlTable;
-            public Matrix aMatrix;
+            public Matrix<double> aMatrix;
             public DistributionApproximation dnApprox;
             public int argMax;
             public double pValue;
         }
 
-        public Vector pValues { get; protected set; }
+        public Vector<double> pValues { get; protected set; }
         public int[] argMaxes { get; protected set; }
 
         private int order;
 
-        public static Matrix BuildAMatrix(int order)
+        public static Matrix<double> BuildAMatrix(int order)
         {
-            var A = new Matrix(order, order);
+            var A = Matrix<double>.Build.Dense(order, order);
             for (int j = 0; j < order; ++j)
                 for (int k = 0; k < order; ++k)
                     A[j, k] = k >= j ? -1 : 1;
@@ -72,18 +72,18 @@ namespace ABMath.Miscellaneous
         /// H0: IIDness => sample autocorrelations are approx. iid normal with means 0, variances 1/n
         /// </summary>
         /// <param name="testSeries"></param>
-        public void ComputeFrom(Vector acf, int count)
+        public void ComputeFrom(Vector<double> acf, int count)
         {
             double scale = Math.Sqrt(count);
 
-            var pvals = new Vector(1);
+            var pvals = Vector<double>.Build.Dense(1);
             argMaxes = new int[1];
 
             var test = InitializeTables();
 
             // first compute the statistic
             int order = test.order;
-            var stacked = new Vector(order);
+            var stacked = Vector<double>.Build.Dense(order);
             for (int i = 0; i < order; ++i)
                 stacked[i] = acf[i + 1]*scale;
             var mstat = test.aMatrix.MultiplyBy(stacked);
@@ -92,7 +92,7 @@ namespace ABMath.Miscellaneous
             double extreme = Math.Max(maxVal, -minVal);
 
             int argMax = -1;
-            for (int i = 0; i < mstat.Length; ++i)
+            for (int i = 0; i < mstat.Count; ++i)
                 if (extreme == Math.Abs(mstat[i]))
                     argMax = i;
 

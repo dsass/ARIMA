@@ -75,9 +75,9 @@ namespace ABMath.ModelFramework.Data
             return sum/count;
         }
 
-        public Vector SampleACF(int maxLag)
+        public Vector<double> SampleACF(int maxLag)
         {
-            var retval = new Vector(maxLag + 1);
+            var retval = Vector<double>.Build.Dense(maxLag + 1);
             retval[0] = 1.0;
             int m = MaxCount;
             double mean = SampleMean();
@@ -167,15 +167,15 @@ namespace ABMath.ModelFramework.Data
             return "Long. Data";
         }
 
-        public Color GetBackgroundColor()
-        {
-            return Color.Fuchsia;
-        }
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.Fuchsia;
+        //}
 
-        public Icon GetIcon()
-        {
-            return null;
-        }
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public string ToolTipText
         {

@@ -75,12 +75,12 @@ namespace ABMath.ModelFramework.Models
 
         #region Model Parameters and Associated Functions
 
-        public abstract Vector Parameters { get; set; }
+        public abstract Vector<double> Parameters { get; set; }
         public ParameterState[] ParameterStates { get; set; }
         public abstract string GetParameterName(int index);
         public abstract string GetParameterDescription(int index);
 
-        public bool SetParameters(Vector v)
+        public bool SetParameters(Vector<double> v)
         {
             if (CheckParameterValidity(v))
             {
@@ -99,13 +99,13 @@ namespace ABMath.ModelFramework.Models
         /// </summary>
         /// <param name="param"></param>
         /// <returns></returns>
-        protected abstract bool CheckParameterValidity(Vector param);
+        protected abstract bool CheckParameterValidity(Vector<double> param);
 
         #region General Utility Functions for Parameter Manipulation
 
         private int NumParametersOfType(ParameterState state)
         {
-            int dimension = Parameters.Length;
+            int dimension = Parameters.Count;
             if (ParameterStates == null)
                 switch (state)
                 {
@@ -128,15 +128,15 @@ namespace ABMath.ModelFramework.Models
         /// </summary>
         /// <param name="lowDimCube"></param>
         /// <returns></returns>
-        private Vector CubeInsert(Vector lowDimCube)
+        private Vector<double> CubeInsert(Vector<double> lowDimCube)
         {
             if (ParameterStates == null)
                 return lowDimCube;
 
-            Vector highDimCube = thisAsMLEEstimable.ParameterToCube(Parameters);
+            Vector<double> highDimCube = thisAsMLEEstimable.ParameterToCube(Parameters);
 
             int i1 = -1;
-            for (int i0 = 0; i0 < lowDimCube.Length; ++i0)
+            for (int i0 = 0; i0 < lowDimCube.Count; ++i0)
             {
                 ++i1;
                 while (ParameterStates[i1] != ParameterState.Free)
@@ -151,12 +151,12 @@ namespace ABMath.ModelFramework.Models
         /// </summary>
         /// <param name="fullParameters"></param>
         /// <returns></returns>
-        private Vector FreeParameters(Vector fullParameters)
+        private Vector<double> FreeParameters(Vector<double> fullParameters)
         {
             if (ParameterStates == null)
                 return fullParameters;
-            var retval = new Vector(NumParametersOfType(ParameterState.Free));
-            for (int i = 0, j = 0; i < fullParameters.Length; ++i)
+            var retval = Vector<double>.Build.Dense(NumParametersOfType(ParameterState.Free));
+            for (int i = 0, j = 0; i < fullParameters.Count; ++i)
                 if (ParameterStates[i] == ParameterState.Free)
                     retval[j++] = fullParameters[i];
             return retval;
@@ -197,15 +197,15 @@ namespace ABMath.ModelFramework.Models
             return Description;
         }
 
-        public Color GetBackgroundColor()
-        {
-            return Color.LightBlue;
-        }
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.LightBlue;
+        //}
 
-        public Icon GetIcon()
-        {
-            return null;
-        }
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public string ToolTipText
         {
@@ -236,7 +236,7 @@ namespace ABMath.ModelFramework.Models
         /// If fillOutputs is true, then the residuals and any other outputs will be filled in.
         /// </summary>
         /// <returns></returns>
-        public abstract double LogLikelihood(Vector parameter, double penaltyFactor, bool fillOutputs);
+        public abstract double LogLikelihood(Vector<double> parameter, double penaltyFactor, bool fillOutputs);
 
         // used to keep track of last evaluated log-likelihood or other G.o.F. measure
 
@@ -247,7 +247,7 @@ namespace ABMath.ModelFramework.Models
         /// and the data set.  The function should throw an exception if it is not possible.
         /// The parameter vector with parameters filled in should be returned.
         /// </summary>
-        protected abstract Vector ComputeConsequentialParameters(Vector parameter);
+        protected abstract Vector<double> ComputeConsequentialParameters(Vector<double> parameter);
 
         /// <summary>
         /// This function must simulate from the current model.
@@ -312,14 +312,14 @@ namespace ABMath.ModelFramework.Models
             int numConsequential = NumParametersOfType(ParameterState.Consequential);
             int numIterations = numIterationsLDS + numIterationsOpt;
 
-            var trialParameterList = new Vector[numIterationsLDS];
-            var trialCubeList = new Vector[numIterationsLDS];
+            var trialParameterList = new Vector<double>[numIterationsLDS];
+            var trialCubeList = new Vector<double>[numIterationsLDS];
 
             var hsequence = new HaltonSequence(optDimension);
 
             if (optDimension == 0) // then all parameters are either locked or consequential
             {
-                Vector tparms = Parameters;
+                Vector<double> tparms = Parameters;
                 Parameters = ComputeConsequentialParameters(tparms);
             }
             else
@@ -328,8 +328,8 @@ namespace ABMath.ModelFramework.Models
 
                 for (int i = 0; i < numIterationsLDS; ++i)
                 {
-                    Vector smallCube = hsequence.GetNext();
-                    Vector cube = CubeInsert(smallCube);
+                    Vector<double> smallCube = hsequence.GetNext();
+                    Vector<double> cube = CubeInsert(smallCube);
                     trialParameterList[i] = thisAsMLEEstimable.CubeToParameter(cube);
                     trialCubeList[i] = cube;
                 }
@@ -363,7 +363,7 @@ namespace ABMath.ModelFramework.Models
 
                 for (int i = 0; i < numIterationsLDS; ++i)
                 {
-                    Vector tparms = trialParameterList[i];
+                    Vector<double> tparms = trialParameterList[i];
                     if (numConsequential > 0)
                     {
                         tparms = ComputeConsequentialParameters(tparms);
@@ -385,7 +385,7 @@ namespace ABMath.ModelFramework.Models
                 // Step 2: Take some of the top values and use them to create a simplex, then optimize
                 // further in natural parameter space with the Nelder Mead algorithm.
                 // Here we optimize in cube space, reflecting the cube when necessary to make parameters valid.
-                var simplex = new List<Vector>();
+                var simplex = new List<Vector<double>>();
                 for (int i = 0; i <= optDimension; ++i)
                     simplex.Add(
                         FreeParameters(thisAsMLEEstimable.ParameterToCube(trialParameterList[numIterationsLDS - 1 - i])));
@@ -419,11 +419,11 @@ namespace ABMath.ModelFramework.Models
         /// </summary>
         /// <param name="cube"></param>
         /// <returns></returns>
-        protected static Vector CubeFix(Vector cube)
+        protected static Vector<double> CubeFix(Vector<double> cube)
         {
-            var trialCube = new Vector(cube);
+            var trialCube = Vector<double>.Build.DenseOfVector(cube);
             // fix cube if coordinates have strayed outside allowable values
-            for (int i = 0; i < trialCube.Length; ++i)
+            for (int i = 0; i < trialCube.Count; ++i)
                 while (trialCube[i] < 0 || trialCube[i] > 1)
                 {
                     if (trialCube[i] < 0.0)
@@ -438,9 +438,9 @@ namespace ABMath.ModelFramework.Models
         /// This function is a wrapper for another function, to be passed to a minimizer.
         /// </summary>
         /// <returns></returns>
-        protected double NegativeLogLikelihood(Vector partialCube)
+        protected double NegativeLogLikelihood(Vector<double> partialCube)
         {
-            Vector trialCube = CubeFix(CubeInsert(partialCube));
+            Vector<double> trialCube = CubeFix(CubeInsert(partialCube));
             return
                 -LogLikelihood(ComputeConsequentialParameters(thisAsMLEEstimable.CubeToParameter(trialCube)),
                                currentPenalty, false);

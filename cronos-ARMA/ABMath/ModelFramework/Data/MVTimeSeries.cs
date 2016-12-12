@@ -143,9 +143,9 @@ namespace ABMath.ModelFramework.Data
             return retval;
         }     
 
-        public Vector SampleMean()
+        public Vector<double> SampleMean()
         {
-            var retval = new Vector(Dimension);
+            var retval = Vector<double>.Build.Dense(Dimension);
             int[] numMissing = new int[Dimension];
             for (int t=0 ; t<Count ; ++t)
                 for (int j = 0; j < Dimension; ++j)
@@ -159,9 +159,9 @@ namespace ABMath.ModelFramework.Data
             return retval;
         }
    
-        public Matrix[] ComputeACF(int maxLag, bool normalize)
+        public Matrix<double>[] ComputeACF(int maxLag, bool normalize)
         {
-            var acf = new Matrix[maxLag + 1];
+            var acf = new Matrix<double>[maxLag + 1];
 
             int i, j, n = Count;
             if (n == 0)
@@ -172,7 +172,7 @@ namespace ABMath.ModelFramework.Data
             // compute the sample autocovariance function.
             for (i = 0; i <= maxLag; ++i)
             {
-                var total = new Matrix(Dimension, Dimension);
+                var total = Matrix<double>.Build.Dense(Dimension, Dimension);
                 for (j = i; j < n; ++j)
                     for (int k = 0; k < Dimension; ++k)
                         for (int l = 0; l < Dimension; ++l)
@@ -318,15 +318,15 @@ namespace ABMath.ModelFramework.Data
             return string.Format("{0}{1}({2})", Title, Environment.NewLine, Count);
         }
 
-        public Color GetBackgroundColor()
-        {
-            return Color.GreenYellow;
-        }
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.GreenYellow;
+        //}
 
-        public Icon GetIcon()
-        {
-            return null;
-        }
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         private string toolTipText;
         public string ToolTipText

@@ -16,7 +16,7 @@ namespace ABMath.ModelFramework.Models
         /// <summary>
         /// This matrix defines quantiles, with InvCDF(first column) = second column
         /// </summary>
-        public Matrix Quantiles 
+        public Matrix<double> Quantiles 
         {   
             get { return quantiles; } 
             set { 
@@ -24,7 +24,7 @@ namespace ABMath.ModelFramework.Models
                 CDF = BuildCDF();
             } 
         }
-        private Matrix quantiles;
+        private Matrix<double> quantiles;
 
         /// <summary>
         /// The CDF is automatically computed when quantiles are set.
@@ -53,7 +53,7 @@ namespace ABMath.ModelFramework.Models
             var o = serializer.Deserialize(reader) as double[];
 
             double resolution = 1.0 / o.Length;
-            var quants = new Matrix(o.Length, 2);
+            var quants = Matrix<double>.Build.Dense(o.Length, 2);
             for (int i = 0; i < o.Length; ++i)
             {
                 quants[i, 1] = (i + 0.5) * resolution;
@@ -70,11 +70,11 @@ namespace ABMath.ModelFramework.Models
         /// <param name="spacing"></param>
         public void FillGaussianQuantiles(double spacing, double StdDev, double Mean)
         {
-            var ndn = new NormalDistribution(0, 1);
+            var ndn = new Normal(0, 1);
 
             int hn = (int)Math.Floor(0.4999 / spacing);
             int n = 2 * hn + 3;
-            var quants = new Matrix(n, 2);
+            var quants = Matrix<double>.Build.Dense(n, 2);
             for (int i = 0; i < hn; ++i)
             {
                 quants[i + hn + 2, 0] = 0.5 + (i + 1) * spacing;
@@ -112,7 +112,7 @@ namespace ABMath.ModelFramework.Models
             var retval = new DistributionApproximation();
 
             // compute quantiles by getting them from the mixed cdf
-            var quants = new Matrix(histBins + 1, 2);
+            var quants = Matrix<double>.Build.Dense(histBins + 1, 2);
             for (int i = 0; i <= histBins; ++i)
             {
                 quants[i, 0] = i / (double)histBins;

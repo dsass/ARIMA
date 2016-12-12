@@ -12,7 +12,7 @@ namespace ABMath.ModelFramework.Models
     public class DurbinLevinsonPredictor
     {
         private double mean;
-        private Vector autocovariance;
+        private Vector<double> autocovariance;
         private AutocovarianceFunction acvFunction;
 
         private int maxN;
@@ -33,11 +33,11 @@ namespace ABMath.ModelFramework.Models
             LocalInitialize();
         }
 
-        public DurbinLevinsonPredictor(double mean, Vector autocovariance)
+        public DurbinLevinsonPredictor(double mean, Vector<double> autocovariance)
         {
             this.mean = mean;
             this.autocovariance = autocovariance;
-            maxN = autocovariance.Length;
+            maxN = autocovariance.Count;
 
             LocalInitialize();
         }

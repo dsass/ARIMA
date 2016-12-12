@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows.Forms;
@@ -79,7 +80,7 @@ namespace ABMath.ModelFramework.Models
             return Parameters[NumParameters() - numExogenous + idx];
         }
 
-        public override Vector Parameters
+        public override Vector<double> Parameters
         {
             get // return ARMA param vector, with gamma coeff. appended to end
             {
@@ -87,8 +88,8 @@ namespace ABMath.ModelFramework.Models
             }
             set
             {
-                var v = new Vector(NumParameters());
-                for (int i = 0; i < value.Length ; ++i)
+                var v = Vector<double>.Build.Dense(NumParameters());
+                for (int i = 0; i < value.Count ; ++i)
                     v[i] = value[i]; // copy what we can
                 base.Parameters = v;
                 for (int i = 0; i < numExogenous; ++i)
@@ -192,16 +193,16 @@ namespace ABMath.ModelFramework.Models
 
         protected new void LocalInitializeParameters()
         {
-            Parameters = new Vector(NumParameters()); // all coeffs are initially zero
+            Parameters = Vector<double>.Build.Dense(NumParameters()); // all coeffs are initially zero
             Mu = 0;
             Sigma = 1;
             FracDiff = 0;  // uses base ARMA properties to fill in appropriate components of vector
 
-            ParameterStates = new ParameterState[Parameters.Length];
+            ParameterStates = new ParameterState[Parameters.Count];
             ParameterStates[0] = ParameterState.Consequential; // mu follows
             ParameterStates[1] = ParameterState.Consequential; // sigma follows from the others
             ParameterStates[2] = ParameterState.Locked; // locked at 0 by default
-            for (int i = 3; i < Parameters.Length; ++i)
+            for (int i = 3; i < Parameters.Count; ++i)
                 ParameterStates[i] = ParameterState.Free; // only AR and MA coefficients are free  
         }
 
@@ -286,10 +287,10 @@ namespace ABMath.ModelFramework.Models
             return adjusted;
         }
 
-        public override double LogLikelihood(Vector parameter, double penaltyFactor, bool fillOutputs)
+        public override double LogLikelihood(Vector<double> parameter, double penaltyFactor, bool fillOutputs)
         {
-            Vector allLLs = null;
-            Vector pbak = Parameters; // save the current one
+            Vector<double> allLLs = null;
+            Vector<double> pbak = Parameters; // save the current one
 
             if (values == null)
                 return double.NaN;
@@ -361,12 +362,12 @@ namespace ABMath.ModelFramework.Models
             return llp.LogLikelihood - llp.Penalty * penaltyFactor;
         }
 
-        protected override Vector ComputeConsequentialParameters(Vector parameter)
+        protected override Vector<double> ComputeConsequentialParameters(Vector<double> parameter)
         {
             // fill in mean and sigma
-            Vector pbak = Parameters;
+            Vector<double> pbak = Parameters;
             Parameters = parameter;
-            Vector newParms;
+            Vector<double> newParms;
 
             double[] rs;
             double[] forecs;
@@ -394,13 +395,13 @@ namespace ABMath.ModelFramework.Models
                     }
                     else // for model with t-distribution innovations
                     {
-                        var tdn = new StudentsTDistribution(TailDegreesOfFreedom);
-                        var vres = new Vector(res);
+                        var tdn = new StudentT(0, 1, TailDegreesOfFreedom);
+                        var vres = Vector<double>.Build.Dense(res);
                         Sigma = tdn.MLEofSigma(vres);
                     }
                 }
 
-                newParms = new Vector(Parameters);
+                newParms = Vector<double>.Build.DenseOfVector(Parameters);
             }
             else
             {
@@ -429,24 +430,24 @@ namespace ABMath.ModelFramework.Models
             return Math.Log(trimmed/(1 - trimmed));
         }
 
-        public override Vector ParameterToCube(Vector param)
+        public override Vector<double> ParameterToCube(Vector<double> param)
         {
             int sz = NumParameters();
             var partCube = base.ParameterToCube(param);
-            var fullCube = new Vector(sz);
-            for (int i = 0; i < partCube.Length; ++i)
+            var fullCube = Vector<double>.Build.Dense(sz);
+            for (int i = 0; i < partCube.Count; ++i)
                 fullCube[i] = partCube[i];
             for (int i = 0; i < numExogenous; ++i )
                 fullCube[sz - numExogenous + i] = Logit(param[sz - numExogenous + i], 0.00005);
             return fullCube;
         }
 
-        public override Vector CubeToParameter(Vector cube)
+        public override Vector<double> CubeToParameter(Vector<double> cube)
         {
             int sz = NumParameters();
             var partial = base.CubeToParameter(cube);
-            var full = new Vector(sz);
-            for (int i = 0; i < partial.Length; ++i)
+            var full = Vector<double>.Build.Dense(sz);
+            for (int i = 0; i < partial.Count; ++i)
                 full[i] = partial[i];
             for (int i = 0; i < numExogenous; ++i )
                 full[sz - numExogenous + i] = InvLogit(cube[sz - numExogenous + i], 0.00005);

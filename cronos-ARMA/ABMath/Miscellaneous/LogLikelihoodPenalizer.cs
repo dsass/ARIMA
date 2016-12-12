@@ -31,7 +31,7 @@ namespace ABMath.Miscellaneous
     /// </summary>
     public class LogLikelihoodPenalizer
     {
-        private Vector components;
+        private Vector<double> components;
         public double Penalty { get; private set; }
         public double LogLikelihood { get; private set; }
 
@@ -39,7 +39,7 @@ namespace ABMath.Miscellaneous
         /// The constructor takes as argument a Vector containing sequential individual Components of log-likelihood.
         /// </summary>
         /// <param name="v"></param>
-        public LogLikelihoodPenalizer(Vector components)
+        public LogLikelihoodPenalizer(Vector<double> components)
         {
             this.components = components;
             LogLikelihood = components.Sum();
@@ -51,8 +51,8 @@ namespace ABMath.Miscellaneous
             double average = components.Average();
 
             // construct cumulative LL, adjusted by average so that the total is 0
-            Vector cumulative = new Vector(components.Length);
-            for (int t=0 ; t<components.Length ; ++t)
+            Vector<double> cumulative = Vector<double>.Build.Dense(components.Count);
+            for (int t=0 ; t<components.Count ; ++t)
                 cumulative[t] = (t > 0 ? cumulative[t - 1] : 0) + components[t] - average;
 
             // now find draw-down in cumulative

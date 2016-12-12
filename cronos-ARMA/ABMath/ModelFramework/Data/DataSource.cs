@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Text;
+using System.Net.Sockets;
 
 namespace ABMath.ModelFramework.Data
 {
@@ -104,15 +105,15 @@ namespace ABMath.ModelFramework.Data
             return "Data source";
         }
 
-        public Color GetBackgroundColor()
-        {
-            return Color.GreenYellow;
-        }
+        //public Color GetBackgroundColor()
+        //{
+        //    return Color.GreenYellow;
+        //}
 
-        public Icon GetIcon()
-        {
-            return null;
-        }
+        //public Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         [Browsable(false)]
         public string ToolTipText
