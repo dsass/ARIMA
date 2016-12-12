@@ -43,6 +43,7 @@ namespace ABMath.Miscellaneous
         private DnInfo InitializeTables()
         {
             DnInfo theTest;
+   
             switch (order)
             {
                 case 12:

@@ -65,6 +65,7 @@
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\PrincipalComponents.cs" />
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\Regression.cs" />
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\StepFunction.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Miscellaneous\TablesResource.Designer.cs" />
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\VanderCorputSequence.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Data\DataSource.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Data\DirectedGraph.cs" />
