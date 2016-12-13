@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -59,10 +60,10 @@ namespace ABMath.ModelFramework.Transforms
             return "Forecasts";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public override bool SetInput(int socket, object item, StringBuilder failMsg)
         {

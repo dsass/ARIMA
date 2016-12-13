@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -62,10 +63,10 @@ namespace ABMath.ModelFramework.Transforms
             return "Custom";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         private void CompileStuff()
         {

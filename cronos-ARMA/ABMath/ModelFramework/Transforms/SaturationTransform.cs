@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Drawing;
 using ABMath.ModelFramework.Data;
@@ -47,11 +48,11 @@ namespace ABMath.ModelFramework.Transforms
             return "Saturate";
         }
 
-        public override Icon GetIcon()
-        {
-            var x = Images.ResourceManager.GetObject("ThresholdIcon") as Icon;
-            return x;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    var x = Images.ResourceManager.GetObject("ThresholdIcon") as Icon;
+        //    return x;
+        //}
 
         public override void Recompute()
         {

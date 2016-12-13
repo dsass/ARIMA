@@ -6,20 +6,24 @@ using System.Threading.Tasks;
 using ARIMA.dataprocessing;
 using ARIMA.timeseries.stats;
 using MathNet.Numerics.LinearAlgebra;
-using ARIMA.cronos-ARMA.ABMath.ModelFramework;
+//using ARIMA.cronos-ARMA.ABMath.ModelFramework;
 using ARIMA.timeseries.math.linalg;
-using cronos-ARMA.ABMath.ModelFramework.Transforms;
+using ABMath.ModelFramework;
+using ABMath.ModelFramework.Transforms;
+using ABMath.ModelFramework.Data;
+using ABMath.ModelFramework.Models;
+//using cronos-ARMA.ABMath.ModelFramework.Transforms;
 
 
 namespace ARIMA.timeseries
 {
-    class TimeSeries
+    public class TimeSeriesWrapper
     {
         private string xattr;
         private string yattr;
         private string file;
 
-        public TimeSeries(string xattribute, string yattribute, string filename)
+        public TimeSeriesWrapper(string xattribute, string yattribute, string filename)
         {
             xattr = xattribute;
             yattr = yattribute;
@@ -61,8 +65,6 @@ namespace ARIMA.timeseries
             List<String[]> data = reader.getData(xindex, yindex, 0, 1, file, delimiter);
             DataObject[,] series = getSeries(data, len);
             Console.WriteLine(testStationarity(series, siglevel));
-            //for (int i = 0; i < 50; i++)
-
 
             int d = 0;
             if (testStationarity(series, siglevel))
@@ -75,52 +77,83 @@ namespace ARIMA.timeseries
             //Difference the series
             if (d != 0)
             {
-                tSeries = ArrayManipulation.diff(GetCol(tSeries, 1));
+                DataObject[] col = GetCol(tSeries, 1);
+                double[] dcol = new double[col.Length];
+                for (int i = 0; i < col.Length; i++)
+                {
+                    dcol[i] = Double.Parse(col[i].Value);
+                }
+                double[] xdiff = ArrayManipulation.diff(dcol);
+                for (int i = 0; i < xdiff.Length; i++)
+                {
+                    tSeries[i, 1].Value = xdiff[i].ToString();
+                }
+                //tSeries = ArrayManipulation.diff(dcol);
             }
 
-            var ts = new Data.TimeSeries 
+            var ts = new TimeSeries 
                                 {
                                     Title = "Time Series",
                                     Description = "TS Description"
                                 };
-            for (int i = 0, i < series.Count; i++)
+            for (int i = 0; i < series.GetLength(0); i++)
             {
-                ts.Add(tSeries[i,0], tSeries[i,1], false); //datetime, value, false
+                ts.Add(tSeries[i,0].Date, Double.Parse(tSeries[i,1].Value), false); //datetime, value, false
             }
 
             //TODO log transform the time series
         
             //Use ACF and PACF to find ARMA parameters
-            var highInterval = 1.96/Math.Sqrt(series.Count);
+            var highInterval = 1.96/Math.Sqrt(series.Length);
             var acf = ts.ComputeACF(20, false);
-            bool crossed = acf[0] > highInterval;
+            Console.WriteLine("confidence interval: " + highInterval.ToString());
+            Console.WriteLine(acf);
+            //bool crossed = acf[0] > highInterval;
             int p = 0;
-            for (int i; i < acf.Count; i++) 
+            var low = acf[0];
+            for (int i = 0; i < acf.Count; i++) 
             {
-                if ((acf[i] > highInterval) != crossed)
+                Console.WriteLine("interval: " + highInterval.ToString() + " acf: " + acf[i].ToString());
+                //if ((acf[i] > highInterval) != crossed)
+                if (Math.Min(low, acf[i]) <= highInterval && highInterval < Math.Max(acf[i], low))
                 {
                     p = i;
+                    if (p != 0)
+                    {
+                        p--;
+                    }
+                    break;
                 }
+                low = acf[i];
             }
-            var pacf = ts.GetPACFFrom(acf);
-            crossed = pacf[0] > highInterval;
+            var pacf = TimeSeries.GetPACFFrom(acf);
+            //crossed = pacf[0] > highInterval;
             int q = 0;
-            for (int i; i < pacf.Count; i++);
+            low = pacf[0];
+            for (int i = 0; i < pacf.Count; i++)
             {
-                if ((pacf[i] > highInterval) != crossed)
+                Console.WriteLine("interval: " + highInterval.ToString() + " pacf: " + pacf[i].ToString());
+                //if ((pacf[i] > highInterval) != crossed)
+                if (Math.Min(low, pacf[i]) <= highInterval && highInterval < Math.Max(pacf[i], low))
                 {
                     q = i;
+                    if (q != 0)
+                    {
+                        q--;
+                    }
+                    break;
                 }
+                low = pacf[i];
             }
-
-            var model = ARMAModel(p, q);
-            model.theData = ts;
+            Console.WriteLine("p: " + p.ToString() + " q: " + q.ToString());
+            var model = new ARMAModel(p, q);
+            model.TheData = ts;
             model.FitByMLE(200, 100, 0, null);
 
             var forecaster = new ForecastTransform();
             var futureTimes = new List<DateTime>();
             var nextTime = ts.GetLastTime();
-            var daysProjected = 8
+            var daysProjected = 8;
             for (int t = 0; t < daysProjected; ++t )
             {
                 nextTime = nextTime.AddDays(1);
@@ -129,7 +162,7 @@ namespace ARIMA.timeseries
             forecaster.FutureTimes = futureTimes.ToArray();
 
             forecaster.SetInput(0, model, null); 
-            forecaster.SetInput(1, simulatedData, null);
+            forecaster.SetInput(1, model.theData, null);
 
             var predictors = forecaster.GetOutput(0) as TimeSeries;
 
@@ -138,7 +171,7 @@ namespace ARIMA.timeseries
             //          predictors[1] is the predictive mean of X_{102} given X_1,...,X_100, etc.
         }
 
-        public static T[] GetCol<T>(this T[,] matrix, int col)
+        public static T[] GetCol<T>(T[,] matrix, int col)
         {
             var colLength = matrix.GetLength(0);
             var colVector = new T[colLength];

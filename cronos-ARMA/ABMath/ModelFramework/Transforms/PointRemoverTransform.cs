@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -54,10 +55,10 @@ namespace ABMath.ModelFramework.Transforms
             return "Remove";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public override void Recompute()
         {

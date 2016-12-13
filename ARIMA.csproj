@@ -49,6 +49,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="cronos-ARMA\ABMath\Forms\ForecastRangeForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="cronos-ARMA\ABMath\Forms\ForecastRangeForm.Designer.cs">
+      <DependentUpon>ForecastRangeForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\DistributionExtensions.cs" />
     <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\MatrixExtensions.cs" />
     <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\MVNormalDistribution.cs" />
@@ -77,6 +83,7 @@
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Data\MVTimeSeries.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Data\TimeSeries.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Data\TimeSeriesBase.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\IExtraFunctionality.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Models\ACFModel.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Models\ARMAModel.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Models\ARMAXModel.cs" />
@@ -95,6 +102,32 @@
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Models\TimeSeriesModel.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Models\UnivariateTimeSeriesModel.cs" />
     <Compile Include="cronos-ARMA\ABMath\ModelFramework\Models\VARModel.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\AggregateTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\BindingTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\BollingerBandTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\CustomTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\DifferenceTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ExpSmoother.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\FilterTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ForecastTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\HubTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\IntegrateTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\LagTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\LinearCombinationTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\LogReturnTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\LogTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\LongitudinalSampler.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\MergeTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\MidpointTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\OHLCAggregator.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\OHLCBarBuilder.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\PointRemoverTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ReferenceSamplingTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotarySwitchTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SamplingTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SaturationTransform.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SplittingTransformation.cs" />
+    <Compile Include="cronos-ARMA\ABMath\ModelFramework\Transforms\TimeSeriesTransformation.cs" />
     <Compile Include="dataprocessing\CSVReader.cs" />
     <Compile Include="dataprocessing\DataObject.cs" />
     <Compile Include="Program.cs" />
@@ -105,13 +138,19 @@
     <Compile Include="timeseries\math\models\RegressionModel.cs" />
     <Compile Include="timeseries\math\models\RegressionResults.cs" />
     <Compile Include="timeseries\math\stats\ADF.cs" />
-    <Compile Include="timeseries\TimeSeries.cs" />
+    <Compile Include="timeseries\TimeSeriesWrapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="cronos-ARMA\.DS_Store" />
     <None Include="cronos-ARMA\ABMath\.DS_Store" />
     <None Include="cronos-ARMA\ABMath\ModelFramework\.DS_Store" />
+    <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\FilterIcon.xcf" />
+    <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\HubIcon.xcf" />
+    <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\IntegralIcon.xcf" />
+    <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotaryIcon.xcf" />
+    <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SamplerIcon.xcf" />
+    <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ThresholdIcon.xcf" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -126,9 +165,21 @@
     <Content Include="cronos-ARMA\ABMath\Miscellaneous\quants4.xml" />
     <Content Include="cronos-ARMA\ABMath\Miscellaneous\quants40.xml" />
     <Content Include="cronos-ARMA\ABMath\Miscellaneous\quants8.xml" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\DifferenceIcon.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\FilterIcon.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\HubIcon.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\IntegralIcon.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotaryIcon.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotaryIcon2.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SamplerIcon.ico" />
+    <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ThresholdIcon.ico" />
     <Content Include="data\household_power_consumption.txt" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="cronos-ARMA\ABMath\Forms\ForecastRangeForm.resx">
+      <DependentUpon>ForecastRangeForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

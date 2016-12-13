@@ -65,6 +65,8 @@ namespace ABMath.Miscellaneous
         public HaltonSequence(int dimension)
         {
             if (dimension > firstPrimes.Length)
+                //dimension = firstPrimes.Length;
+                // added that last line
                 throw new 
                     ArgumentOutOfRangeException("dimension");
 

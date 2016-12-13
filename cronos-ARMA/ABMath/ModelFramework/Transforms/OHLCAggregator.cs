@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -65,10 +66,10 @@ namespace ABMath.ModelFramework.Transforms
             return "OHLC Agg.";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         private DateTime PhaseAdjust(DateTime dt)
         {
@@ -97,7 +98,7 @@ namespace ABMath.ModelFramework.Transforms
 
             combined = new MVTimeSeries(series.Count);
 
-            var accumulated = new Vector(series.Count);
+            var accumulated = Vector<double>.Build.Dense(series.Count);
 
             accumulated[0] = open[0];
             accumulated[1] = high[0];
@@ -114,8 +115,8 @@ namespace ABMath.ModelFramework.Transforms
                 if (intoBar >= Period)
                 {
                     // dump the previous bar and reset things
-                    combined.Add(initialTime + Period, accumulated, false);
-                    accumulated = new Vector(series.Count);
+                    combined.Add(initialTime + Period, accumulated.ToArray(), false);
+                    accumulated = Vector<double>.Build.Dense(series.Count);
                     accumulated[0] = open[t];
                     accumulated[1] = high[t];
                     accumulated[2] = low[t];

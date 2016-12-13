@@ -18,10 +18,12 @@
 #endregion
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using ABMath.ModelFramework.Data;
+using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.Statistics;
 
 namespace ABMath.ModelFramework.Transforms
@@ -88,10 +90,10 @@ namespace ABMath.ModelFramework.Transforms
             return "Boll. Bands";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public override void Recompute()
         {
@@ -108,18 +110,21 @@ namespace ABMath.ModelFramework.Transforms
             var upper = new TimeSeries();
             var indicators = new TimeSeries();
 
-            var acc = new Accumulator();
+            var acc = new List<double>();//new Accumulator();
             for (int t=0 ; t<input.Count ; ++t)
             {
                 acc.Add(input[t]);
                 if (acc.Count > NumPeriods)
                 {
+                    Vector<double> v = Vector<double>.Build.DenseOfArray(acc.ToArray());
+                    double sigma = Statistics.PopulationStandardDeviation(v);
+                    double mean = Statistics.Mean(v);
                     acc.Remove(input[t - NumPeriods]);
                     values.Add(input.TimeStamp(t), input[t], false);
-                    lower.Add(input.TimeStamp(t), acc.Mean - Width * acc.Sigma, false);
-                    upper.Add(input.TimeStamp(t), acc.Mean + Width * acc.Sigma, false);
-                    double sig = acc.Sigma;
-                    indicators.Add(input.TimeStamp(t), sig != 0 ? (input[t] - acc.Mean)/sig : 0, false);
+                    lower.Add(input.TimeStamp(t), mean - Width * sigma, false);
+                    upper.Add(input.TimeStamp(t), mean + Width * sigma, false);
+                    double sig = sigma;
+                    indicators.Add(input.TimeStamp(t), sig != 0 ? (input[t] - mean)/sig : 0, false);
                 }
             }
 

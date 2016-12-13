@@ -18,6 +18,7 @@
 #endregion
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -69,11 +70,11 @@ namespace ABMath.ModelFramework.Transforms
             return "Diff_" + Lag;
         }
 
-        public override Icon GetIcon()
-        {
-            var x = Images.ResourceManager.GetObject("DifferenceIcon") as Icon;
-            return x;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    var x = Images.ResourceManager.GetObject("DifferenceIcon") as Icon;
+        //    return x;
+        //}
 
         public override int NumInputs()
         {

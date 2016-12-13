@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Drawing;
 using ABMath.ModelFramework.Data;
@@ -48,10 +49,10 @@ namespace ABMath.ModelFramework.Transforms
             return "Merge";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public override void Recompute()
         {

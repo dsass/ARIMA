@@ -19,7 +19,7 @@ namespace ARIMA
             //}
             //string file = args[0];
             string file = "C:/Users/Steffani/Documents/Visual Studio 2015/Projects/ARIMA/data/household_power_consumption.txt";
-            TimeSeries ts = new TimeSeries("Global_active_power", "Global_intensity", file);
+            TimeSeriesWrapper ts = new TimeSeriesWrapper("Global_active_power", "Global_intensity", file);
             ts.beginARMAProcess(';', 0.05);
             while (true) { } // to be able to see the output from debugging
         }

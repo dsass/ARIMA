@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Drawing;
 using ABMath.ModelFramework.Data;
@@ -52,13 +53,13 @@ namespace ABMath.ModelFramework.Transforms
             return "Rotary";
         }
 
-        public override Icon GetIcon()
-        {
-            var x = CurrentSelection == 1
-                        ? Images.ResourceManager.GetObject("RotaryIcon") as Icon
-                        : Images.ResourceManager.GetObject("RotaryIcon2") as Icon;
-            return x;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    var x = CurrentSelection == 1
+        //                ? Images.ResourceManager.GetObject("RotaryIcon") as Icon
+        //                : Images.ResourceManager.GetObject("RotaryIcon2") as Icon;
+        //    return x;
+        //}
 
         public override void Recompute() // actually this does nothing since it's a pass through type of transform
         {

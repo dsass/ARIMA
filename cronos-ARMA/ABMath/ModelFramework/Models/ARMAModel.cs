@@ -326,7 +326,7 @@ namespace ABMath.ModelFramework.Models
         public Vector<double> GetMAPolynomial()
         {
             //var p = new Polynomial(MAOrder);
-            var p = Vector<double>.Build.Dense(MAOrder);
+            var p = Vector<double>.Build.Dense(MAOrder + 1);
             p[0] = 1.0;
             for (int i = 1; i <= MAOrder; ++i)
                 p[i] = MACoeff(i - 1);
@@ -589,7 +589,8 @@ namespace ABMath.ModelFramework.Models
         //private Polynomial GetARPoly()
         private Vector<double> GetARPoly()
         {
-            var p = Vector<double>.Build.Dense(arOrder);
+            //Console.WriteLine(arOrder);
+            var p = Vector<double>.Build.Dense(arOrder + 1);
             //var p = new Polynomial(arOrder);
             p[0] = 1.0;
             for (int i = 0; i < arOrder; ++i)
@@ -601,7 +602,7 @@ namespace ABMath.ModelFramework.Models
         private Vector<double> GetMAPoly()
         {
             //var p = new Polynomial(maOrder);
-            var p = Vector<double>.Build.Dense(maOrder);
+            var p = Vector<double>.Build.Dense(maOrder + 1);
             p[0] = 1.0;
             for (int i = 0; i < maOrder; ++i)
                 p[i + 1] = MACoeff(i);

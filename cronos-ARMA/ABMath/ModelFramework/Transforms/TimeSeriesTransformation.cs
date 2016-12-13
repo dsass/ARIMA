@@ -20,6 +20,7 @@
 #endregion
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -103,14 +104,14 @@ namespace ABMath.ModelFramework.Transforms
             return new List<Type>();
         }
 
-        public virtual Color GetBackgroundColor()
-        {
-            return Color.Honeydew;
-        }
+        //public virtual Color GetBackgroundColor()
+        //{
+        //    return Color.Honeydew;
+        //}
 
         public abstract string GetDescription();
         public abstract string GetShortDescription();
-        public abstract Icon GetIcon();
+        //public abstract Icon GetIcon();
 
         public virtual object GetOutput(int socket)
         {

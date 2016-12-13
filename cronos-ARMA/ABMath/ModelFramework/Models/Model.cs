@@ -44,7 +44,8 @@ namespace ABMath.ModelFramework.Models
         #endregion
 
         private double currentPenalty;
-        [NonSerialized] protected object theData;
+        //[NonSerialized] protected object theData;
+        [NonSerialized] public object theData;
         private IMLEEstimable thisAsMLEEstimable;
         private IMoMEstimable thisAsMoMEstimable;
         private string toolTipText;

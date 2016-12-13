@@ -43,9 +43,9 @@ namespace ABMath.ModelFramework.Transforms
             return "Lag";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
     }
 }

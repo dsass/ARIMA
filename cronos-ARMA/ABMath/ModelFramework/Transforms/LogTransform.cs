@@ -19,6 +19,7 @@
 
 
 using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -67,10 +68,10 @@ namespace ABMath.ModelFramework.Transforms
             return "Log";
         }
 
-        public override Icon GetIcon()
-        {
-            return null;
-        }
+        //public override Icon GetIcon()
+        //{
+        //    return null;
+        //}
 
         public override int NumInputs()
         {

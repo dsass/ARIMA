@@ -40,6 +40,10 @@ namespace ARIMA.dataprocessing
             {
                 return String.Copy(val);
             }
+            set
+            {
+                val = value;
+            }
         }
     }
 }

@@ -49,7 +49,7 @@ namespace ABMath.IridiumExtensions
                     m[sz - 1, i] = -p[i] / highestCoeff;
 
                 Evd<double> ed = m.Evd();//new EigenvalueDecomposition(m);
-                ed.Solve(m);
+                //ed.Solve(m);
 
                 for (int i = 0; i < sz; ++i)
                 {
@@ -131,7 +131,7 @@ namespace ABMath.IridiumExtensions
                 for (int j = invRoots.Count ; j > 0; --j)
                     retval[j] -= invRoots[i]*retval[j - 1];
 
-            var p = Vector<double>.Build.Dense(invRoots.Count);//new Polynomial(invRoots.Count);
+            var p = Vector<double>.Build.Dense(invRoots.Count + 1);//new Polynomial(invRoots.Count);
             for (int i=0 ; i<=invRoots.Count ; ++i)
                 if (Math.Abs(retval[i].Imaginary) > epsilon)
                     throw new ApplicationException("Unmapped polynomial has complex coefficients.");
