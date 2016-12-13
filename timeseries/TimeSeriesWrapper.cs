@@ -44,7 +44,7 @@ namespace ARIMA.timeseries
             }
         }
 
-        public void beginARMAProcess(char delimiter, double siglevel, int len=50)
+        public ARMAModel beginARMAProcess(char delimiter, double siglevel, int len=50)
         {
             CSVReader reader = new CSVReader();
             string[] headers = reader.getHeaders(file, delimiter);
@@ -152,25 +152,63 @@ namespace ARIMA.timeseries
             model.TheData = ts;
             model.FitByMLE(200, 100, 0, null);
 
+            return model;
+            
+
+            // now predictors is a time series of the forecast values for the next 8 days
+            // that is, predictors[0] is the predictive mean of X_{101} given X_1,...,X_100,
+            //          predictors[1] is the predictive mean of X_{102} given X_1,...,X_100, etc.
+        }
+
+        public TimeSeries predictARMA(List<DateTime> futureTimes, ARMAModel model)
+        {
             var forecaster = new ForecastTransform();
-            var futureTimes = new List<DateTime>();
-            var nextTime = ts.GetLastTime();
-            var daysProjected = 8;
-            for (int t = 0; t < daysProjected; ++t )
-            {
-                nextTime = nextTime.AddDays(1);
-                futureTimes.Add(nextTime);
-            }
+            // var futureTimes = new List<DateTime>();
+            // var nextTime = ts.GetLastTime();
+            // var daysProjected = 8;
+            // for (int t = 0; t < daysProjected; ++t )
+            // {
+            //     nextTime = nextTime.AddDays(1);
+            //     futureTimes.Add(nextTime);
+            // }
             forecaster.FutureTimes = futureTimes.ToArray();
 
             forecaster.SetInput(0, model, null); 
             forecaster.SetInput(1, model.theData, null);
 
             var predictors = forecaster.GetOutput(0) as TimeSeries;
+            return predictors;
+        }
 
-            // now predictors is a time series of the forecast values for the next 8 days
-            // that is, predictors[0] is the predictive mean of X_{101} given X_1,...,X_100,
-            //          predictors[1] is the predictive mean of X_{102} given X_1,...,X_100, etc.
+        public Double[] evaluatePrediction(TimeSeries predictors, DataObject[] data)
+        {
+            Double mae = 0;
+            Double rmse = 0;
+            Double mape = 0;
+
+            var absmean = 0;
+            var sqmean = 0;
+            var p = 0;
+
+            Double[] error = new DataObject[data.Length]();
+            for (int i = 0; i < data.Length; i++)
+            {
+                error[i] = predictors[i] - Double.Parse(data[i].Value);
+                absmean = absmean + Math.Abs(error[i]);
+                sqmean = sqmean + Math.Pow(error[i], 2);
+                var p_i = (100 * error[i]) / Double.Parse(data[i].Value);
+                p = p + Math.Abs(p_i);
+            }
+
+            mae = absmean/error.Length;
+            rmse = Math.Sqrt(sqmean/error.Length);
+            mape = p/error.Length;
+            
+            Double[] toReturn = new Double[3];
+            toReturn[0] = mae;
+            toReturn[1] = rmse;
+            toReturn[2] = mape;
+            return toReturn;
         }
 
         public static T[] GetCol<T>(T[,] matrix, int col)
