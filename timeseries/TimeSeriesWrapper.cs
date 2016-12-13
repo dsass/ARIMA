@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 using ARIMA.dataprocessing;
 using ARIMA.timeseries.stats;
 using MathNet.Numerics.LinearAlgebra;
-//using ARIMA.cronos-ARMA.ABMath.ModelFramework;
 using ARIMA.timeseries.math.linalg;
 using ABMath.ModelFramework;
 using ABMath.ModelFramework.Transforms;
 using ABMath.ModelFramework.Data;
 using ABMath.ModelFramework.Models;
-//using cronos-ARMA.ABMath.ModelFramework.Transforms;
 
 
 namespace ARIMA.timeseries
@@ -101,7 +99,11 @@ namespace ARIMA.timeseries
                 ts.Add(tSeries[i,0].Date, Double.Parse(tSeries[i,1].Value), false); //datetime, value, false
             }
 
-            //TODO log transform the time series
+            //log transform the time series
+            var logTransform = new LogReturnTransformation();
+            logTransform.SetInput(0, ts, null);
+            logTransform.recompute();
+            ts = logTransform.GetOutput(0);
         
             //Use ACF and PACF to find ARMA parameters
             var highInterval = 1.96/Math.Sqrt(series.Length);
