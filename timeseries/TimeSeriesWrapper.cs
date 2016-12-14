@@ -166,9 +166,14 @@ namespace ARIMA.timeseries
 
             var predictors = forecaster.GetOutput(0) as TimeSeries;
 
+            Console.WriteLine("results: ");
+            Console.WriteLine(predictors.GetDescription());
+            Console.WriteLine(predictors[0]);
+            Console.WriteLine(predictors[1]);
+
             // now predictors is a time series of the forecast values for the next 8 days
-            // that is, predictors[0] is the predictive mean of X_{101} given X_1,...,X_100,
-            //          predictors[1] is the predictive mean of X_{102} given X_1,...,X_100, etc.
+            // that is, predictors[0] is the predictive mean of Y_{101} given Y_1,...,Y_100,
+            //          predictors[1] is the predictive mean of Y_{102} given Y_1,...,Y_100, etc.
         }
 
         public static T[] GetCol<T>(T[,] matrix, int col)
