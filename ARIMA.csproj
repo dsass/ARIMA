@@ -133,12 +133,12 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="timeseries\math\linalg\ArrayManipulation.cs" />
-    <Compile Include="timeseries\math\MathFunctions.cs" />
     <Compile Include="timeseries\math\models\Model.cs" />
     <Compile Include="timeseries\math\models\RegressionModel.cs" />
     <Compile Include="timeseries\math\models\RegressionResults.cs" />
     <Compile Include="timeseries\math\stats\ADF.cs" />
     <Compile Include="timeseries\TimeSeriesWrapper.cs" />
+    <Compile Include="timeseries\TSAnalyzer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -151,6 +151,10 @@
     <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotaryIcon.xcf" />
     <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SamplerIcon.xcf" />
     <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ThresholdIcon.xcf" />
+    <None Include="data\airqual.csv" />
+    <None Include="data\consumption.csv" />
+    <None Include="data\MSFT.csv" />
+    <None Include="data\syntheticdata.csv" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -173,7 +177,6 @@
     <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotaryIcon2.ico" />
     <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SamplerIcon.ico" />
     <Content Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ThresholdIcon.ico" />
-    <Content Include="data\household_power_consumption.txt" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="cronos-ARMA\ABMath\Forms\ForecastRangeForm.resx">

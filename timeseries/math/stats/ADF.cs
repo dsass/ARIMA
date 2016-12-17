@@ -25,8 +25,14 @@ namespace ARIMA.timeseries.stats
             populateCritVals(ref TCritcalVals);
         }
 
+        // runs the adf test on the Xdata and Ydata
+        // returns true if the t statistic is less than the t critical value and false if otherwise
+        // sig is the significant level as a decimal
         public bool adfuller(double sig)
         {
+            // the test builds an OLS regression model on Y and lagged X values and then uses the t statistic 
+            // from that test and compares it to the t critical values 
+
             Vector<double> Xdiff = Vector<double>.Build.DenseOfArray(math.linalg.ArrayManipulation.diff(Xdata.ToArray()));
             Vector<double> Xlag = Vector<double>.Build.Dense(Xdata.Count - 1);
             for (int i = 1; i < Xdata.Count; i++)
@@ -35,9 +41,6 @@ namespace ARIMA.timeseries.stats
             }
             Vector<double> Xlagdiff = Vector<double>.Build.DenseOfArray(math.linalg.ArrayManipulation.diff(Xlag.ToArray()));
             Matrix<double> Xcomb = Matrix<double>.Build.Dense(Xlag.Count, 2);
-
-            Console.WriteLine(Xlag.Count);
-            Console.WriteLine(Xlagdiff.Count);
 
             Xcomb[0, 0] = Xlag[0];
             Xcomb[0, 1] = 0;
@@ -57,10 +60,7 @@ namespace ARIMA.timeseries.stats
             Matrix<double> design = OLS_instance.designMatrix(Xcomb);
             Vector<double> coeff = OLS_instance.fit(design, ytest);
 
-            Console.WriteLine(OLS_instance.Rsquared(Xcomb, Ydata, coeff));
-
             double tstat = OLS_instance.testValue(Xcomb, Ydata, 1, coeff);
-            Console.WriteLine(tstat);
 
             int abs50 = Math.Abs(Xdata.Count - 50);
             int abs100 = Math.Abs(Xdata.Count - 100);
@@ -102,6 +102,7 @@ namespace ARIMA.timeseries.stats
             }
         }
 
+        // hard codes the t critical values into the criticalvals dictionary
         public static void populateCritVals(ref Dictionary<int, Dictionary<int, double>> criticalvals)
         {
             // critical values hard coded in

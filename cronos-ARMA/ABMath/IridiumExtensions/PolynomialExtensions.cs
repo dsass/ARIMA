@@ -132,9 +132,10 @@ namespace ABMath.IridiumExtensions
                     retval[j] -= invRoots[i]*retval[j - 1];
 
             var p = Vector<double>.Build.Dense(invRoots.Count + 1);//new Polynomial(invRoots.Count);
-            for (int i=0 ; i<=invRoots.Count ; ++i)
+            for (int i = 0; i <= invRoots.Count; ++i)
                 if (Math.Abs(retval[i].Imaginary) > epsilon)
-                    throw new ApplicationException("Unmapped polynomial has complex coefficients.");
+                    p[i] = retval[i].Real;
+                //throw new ApplicationException("Unmapped polynomial has complex coefficients.");
                 else
                     p[i] = retval[i].Real;
             return p;
@@ -150,7 +151,8 @@ namespace ABMath.IridiumExtensions
         {
             var allRoots = p.Roots();
             StripConjugates(allRoots);
-            var cube = Vector<double>.Build.Dense(p.Count - 1);
+            int order = p.Count - 1;
+            var cube = Vector<double>.Build.Dense(order);
             var complexRoots = new List<Complex>();
             var realRoots = new List<double>();
 
