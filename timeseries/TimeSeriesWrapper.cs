@@ -143,7 +143,7 @@ namespace ARIMA.timeseries
             forecaster.SetInput(1, model.TheData, null);
 
             var predictors = forecaster.GetOutput(0) as TimeSeries;
-
+            return predictors;
             // now we need to merge the forecast time series and the original time series with the original data
 
             var merger = new MergeTransform();
