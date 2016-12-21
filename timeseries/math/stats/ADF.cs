@@ -16,12 +16,10 @@ namespace ARIMA.timeseries.stats
 
         private Dictionary<int, Dictionary<int, double>> TCritcalVals;
         private Vector<double> Xdata;
-        private Vector<double> Ydata;   
 
-        public ADF(Vector<double> X, Vector<double> Y)
+        public ADF(Vector<double> X)
         {
             Xdata = X;
-            Ydata = Y;
             populateCritVals(ref TCritcalVals);
         }
 
@@ -53,14 +51,14 @@ namespace ARIMA.timeseries.stats
 
             Vector<double> ytest = Vector<double>.Build.Dense(Xlag.Count);
 
-            Ydata.CopySubVectorTo(ytest, 2, 0, Ydata.Count - 2);
+            Xdata.CopySubVectorTo(ytest, 2, 0, Xdata.Count - 2);
 
             RegressionModel OLS_instance = new RegressionModel(Xcomb, ytest, "OLS");
 
             Matrix<double> design = OLS_instance.designMatrix(Xcomb);
             Vector<double> coeff = OLS_instance.fit(design, ytest);
 
-            double tstat = OLS_instance.testValue(Xcomb, Ydata, 1, coeff);
+            double tstat = OLS_instance.testValue(Xcomb, Xdata, 1, coeff);
 
             int abs50 = Math.Abs(Xdata.Count - 50);
             int abs100 = Math.Abs(Xdata.Count - 100);

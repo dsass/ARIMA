@@ -24,12 +24,13 @@ namespace ARIMA.dataprocessing
                 return null;
             }
             string header = filereader.ReadLine();
+            header = header.Replace('"', ' ');
             string[] headers = header.Split(delimiter).Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
             return headers;                    
         }
 
         // returns the data in a list of string arrays in the form of [date, time, xvalue, yvalue] if the dataset contains both a date and a time
-        public List<string[]> getData(int xindex, int yindex, int dateindex, string filename, char delimiter, bool hastime, int timeindex=1)
+        public List<string[]> getData(int xindex, int dateindex, string filename, char delimiter, bool hastime, int timeindex=1)
         {
             System.IO.StreamReader reader = null;
             try
@@ -43,39 +44,41 @@ namespace ARIMA.dataprocessing
             List<String[]> data = new List<String[]>();
             while ((line = reader.ReadLine()) != null)
             {
+                line = line.Replace('"', ' ');
                 string[] values = line.Split(delimiter).Select(s => s.Trim()).Where(s => s != String.Empty).ToArray();
                 if (hastime)
                 {
                     try
                     {
+                        if (values.Length == 0)
+                        {
+                            throw new System.FormatException();
+                        }
                         double val1 = Double.Parse(values[xindex]);
-                        double val2 = Double.Parse(values[yindex]);
                     }
                     catch (System.FormatException)
                     {
                         continue;
-                    } finally
-                    {
-                        string[] linedata = new string[] { values[dateindex], values[timeindex], values[xindex], values[yindex] };
-                        data.Add(linedata);
-                    }
+                    } 
+                    string[] linedata = new string[] { values[dateindex], values[timeindex], values[xindex] };
+                    data.Add(linedata);
                 }
                 else
                 {
                     try
                     {
+                        if (values.Length == 0)
+                        {
+                            throw new System.FormatException();
+                        }
                         double val1 = Double.Parse(values[xindex]);
-                        double val2 = Double.Parse(values[xindex]);
                     }
                     catch (System.FormatException)
                     {
                         continue;
                     }
-                    finally
-                    {
-                        string[] linedata = new string[] { values[dateindex], values[xindex], values[yindex] };
-                        data.Add(linedata);
-                    }
+                    string[] linedata = new string[] { values[dateindex], values[xindex] };
+                    data.Add(linedata);                   
                 }
             }
             return data;

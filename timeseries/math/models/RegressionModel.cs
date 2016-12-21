@@ -11,16 +11,8 @@ namespace ARIMA.timeseries.models
 {
     public class RegressionModel : Model
     {
-        string[] data_attr;
-        //Matrix<double> normalized_cov_params;
-        static double thisrank;
-        static double df_model;
-        //Matrix<double> pinv_wexog;
-        Matrix<double> wexog;
         protected double nobs;
-        Matrix<double> wendog;
         string thismodel;
-        static int k_constant;
 
         public RegressionModel(Matrix<double> Xdata, Vector<double> Ydata, string m) : base(Xdata, Ydata)
         {
@@ -69,7 +61,6 @@ namespace ARIMA.timeseries.models
             int rows = data.RowCount;
             int cols = data.ColumnCount;
             Matrix<double> result = Matrix<double>.Build.Dense(rows, cols + 1);
-            //double[][] result = MatrixCreate(rows, cols + 1);
             for (int i = 0; i < rows; ++i)
                 result[i,0] = 1.0;
 
@@ -106,35 +97,6 @@ namespace ARIMA.timeseries.models
             return result;
         }
 
-        public Matrix<double>[] DummyData(int rows, int seed)
-        {
-            // generate dummy data for linear regression problem
-            double b0 = 15.0;
-            double b1 = 0.8; // education years
-            double b2 = 0.5; // work years
-            double b3 = -3.0; // sex = 0 male, 1 female
-            Random rnd = new Random(seed);
-
-            Matrix<double> data = Matrix<double>.Build.Dense(rows, 1);
-            Matrix<double> ydata = Matrix<double>.Build.Dense(rows, 1);
-
-            for (int i = 0; i < rows; ++i)
-            {
-                int ed = rnd.Next(12, 17); // 12, 16]
-                int work = rnd.Next(10, 31); // [10, 30]
-                int sex = rnd.Next(0, 2); // 0 or 1
-                double y = b0 + (b1 * ed);// + (b2 * work) + (b3 * sex);
-                y += 10.0 * rnd.NextDouble() - 5.0; // random [-5 +5]
-
-                data[i, 0] = ed;
-                //data[i, 1] = work;
-                //data[i, 2] = sex;
-                //result[i,3] = y; // income
-                ydata[i, 0] = y;
-            }
-            return new Matrix<double>[] { data, ydata };
-        }
-
         public double testValue(Matrix<double> X, Vector<double> Y, int attr, Vector<double> coeff)
         {
             // calculates the test statistic for a certain variable for the linear regression model
@@ -144,16 +106,8 @@ namespace ARIMA.timeseries.models
             {
                 index = attr - 1;
             }
-           // Console.WriteLine(index);
-           // Console.WriteLine(X.Column(index));
             double stdev = Statistics.StandardDeviation(X.Column(index));
-           // Console.WriteLine(stdev);
-           // Console.WriteLine(stdev / Math.Sqrt(X.RowCount));
             return coeff[attr] / (stdev / Math.Sqrt(X.RowCount));
-            //double rsquared = Rsquared(X, Y, coeff);
-            //double numerator = nobs - 2;
-            //double denominator = 1 - rsquared;
-            //return Math.Sqrt(rsquared) * Math.Sqrt(numerator / denominator);
         }
 
 

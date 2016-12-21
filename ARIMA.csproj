@@ -55,13 +55,13 @@
     <Compile Include="cronos-ARMA\ABMath\Forms\ForecastRangeForm.Designer.cs">
       <DependentUpon>ForecastRangeForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\DistributionExtensions.cs" />
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\MatrixExtensions.cs" />
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\MVNormalDistribution.cs" />
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\PolynomialExtensions.cs" />
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\PrincipalComponents.cs" />
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\TDistributionExtensions.cs" />
-    <Compile Include="cronos-ARMA\ABMath\IridiumExtensions\VectorExtensions.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\DistributionExtensions.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\MatrixExtensions.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\MVNormalDistribution.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\PolynomialExtensions.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\PrincipalComponents.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\TDistributionExtensions.cs" />
+    <Compile Include="cronos-ARMA\ABMath\Forms\IridiumExtensions\VectorExtensions.cs" />
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\BStatistic.cs" />
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\DiscreteFourierTransform.cs" />
     <Compile Include="cronos-ARMA\ABMath\Miscellaneous\HaltonSequence.cs" />
@@ -135,7 +135,6 @@
     <Compile Include="timeseries\math\linalg\ArrayManipulation.cs" />
     <Compile Include="timeseries\math\models\Model.cs" />
     <Compile Include="timeseries\math\models\RegressionModel.cs" />
-    <Compile Include="timeseries\math\models\RegressionResults.cs" />
     <Compile Include="timeseries\math\stats\ADF.cs" />
     <Compile Include="timeseries\TimeSeriesWrapper.cs" />
     <Compile Include="timeseries\TSAnalyzer.cs" />
@@ -151,10 +150,10 @@
     <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\RotaryIcon.xcf" />
     <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\SamplerIcon.xcf" />
     <None Include="cronos-ARMA\ABMath\ModelFramework\Transforms\ThresholdIcon.xcf" />
-    <None Include="data\airqual.csv" />
     <None Include="data\consumption.csv" />
+    <None Include="data\dailymintempmelbourne.csv" />
+    <None Include="data\mean-daily-saugeen-river-flows.csv" />
     <None Include="data\MSFT.csv" />
-    <None Include="data\syntheticdata.csv" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

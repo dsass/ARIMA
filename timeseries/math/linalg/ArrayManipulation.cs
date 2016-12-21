@@ -9,6 +9,7 @@ namespace ARIMA.timeseries.math.linalg
 {
     public class ArrayManipulation
     {
+        // difference an array
         public static double[] diff(double[] array, int n = 1)
         {
             if (n == 0)
@@ -27,6 +28,7 @@ namespace ARIMA.timeseries.math.linalg
             return diff(diffarray, n - 1);
         }
 
+        //compute the vandermonte matrix of an array
         public static double[,] vander(double[] x, int n)
         {
             double[,] res = new double[x.Length, n];
@@ -42,6 +44,7 @@ namespace ARIMA.timeseries.math.linalg
             return res;
         }
 
+        // flip a matrix from left to right
         public static double[,] fliplr(double[,] x)
         {
             int dim1 = x.GetLength(0);
@@ -62,6 +65,7 @@ namespace ARIMA.timeseries.math.linalg
             return x;
         }
 
+        // Stack 2-D arrays as columns into a 2-D array.
         public static double[,] column_stack(double[,] array1, double[,] array2)
         {
             int length = array1.GetLength(1) + array2.GetLength(2);
@@ -83,6 +87,7 @@ namespace ARIMA.timeseries.math.linalg
             return res;
         }
 
+        // Roll array elements along a given axis.
         public static double[,] roll(double[,] X, int shift, int axis)
         {
             double[,] res = new double[X.GetLength(0), X.GetLength(1)];
@@ -110,67 +115,6 @@ namespace ARIMA.timeseries.math.linalg
             return res;
         }
 
-        public static Matrix<double> pinv_extend(Matrix<double> X, double rcond = 1e-15)
-        {
-            X = X.Conjugate();
-            MathNet.Numerics.LinearAlgebra.Factorization.Svd<double> svd = X.Svd(true);
-            double m = svd.U.RowCount;
-            double n = svd.VT.ColumnCount;
-            Vector<double> s = svd.S;
-            double cutoff = rcond * s.Maximum();
-            for (int j = 0; j < Math.Min(m, n); j++)
-            {
-                if (s[j] > cutoff)
-                {
-                    s[j] = 1.0 / s[j];
-                }
-                else
-                {
-                    s[j] = 0.0;
-                }
-            }
-            Matrix<double> vttranspose = svd.VT.Transpose();
-            //Console.WriteLine(vttranspose.ToString());
-            Console.WriteLine(m);
-            Console.WriteLine(n);
-            Console.WriteLine(Math.Min(m, n));
-            Console.WriteLine(svd.VT.ToString());
-            Console.WriteLine(svd.U.ToString());
-
-            // THIS WAS A QUICK FIX TO DEAL WITH THE FACT THE U AND VT ARE SQUARE MATRICES AND NOT M x K
-            // MUST DEAL WITH THIS BEFORE CONTINUING OTHERWISE IT MESSES UP EVERYTHING
-
-            //Vector<double> scopy = Vector<double>.Build.Dense((int)m);
-            //int i = 0;
-            //int pointer = 0;
-            //while (i < m)
-            //{
-            //    scopy[i] = s[pointer];
-            //    //s = (Vector<double>)s.Concat(scopy);
-            //    i++;
-            //    pointer = (pointer + 1) % s.Count;
-            //}
-            Matrix<double> scopy = Matrix<double>.Build.Dense((int)m, (int)m, s[0]);
-            Matrix<double> vtcopy = Matrix<double>.Build.Dense((int)m, (int)m, svd.VT[0,0]);
-            Matrix<double> sbyutrans = scopy.TransposeAndMultiply(svd.U);
-            //Matrix<double> sbyutrans = scopy.ToColumnMatrix().TransposeAndMultiply(svd.U);
-            //return sbyutrans.PointwiseMultiply(vttranspose);
-            return sbyutrans.PointwiseMultiply(vtcopy.Transpose());
-
-            //    u, s, vt = np.linalg.svd(X, 0)
-            //    s_orig = np.copy(s)
-            //    m = u.shape[0]
-            //    n = vt.shape[1]
-            // cutoff = rcond * np.maximum.reduce(s)
-            //for i in range(min(n, m)):
-            //    if s[i] > cutoff:
-            //        s[i] = 1./ s[i]
-            //    else:
-            //        s[i] = 0.
-            //res = np.dot(np.transpose(vt), np.multiply(s[:, np.core.newaxis],
-            //                                 np.transpose(u)))
-            //return res;
-        }
 
     }
 }
