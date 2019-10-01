@@ -11,9 +11,10 @@ namespace ARIMA
     {
         static void Main(string[] args)
         {
-            TSAnalyzer analyzer = new TSAnalyzer();
-            analyzer.demo();
-            while (true) { } // to be able to see the output from debugging
+
+            TSAnalyzer.RunDemo();
+
+            Console.ReadLine();
         }
     }
 }

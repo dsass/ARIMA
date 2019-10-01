@@ -21,7 +21,7 @@ namespace ARIMA.timeseries
 
         // this method fits an ARMA model to the data and returns it, in the process testing for non-stationarity and calculating the orders of the
         // MA and AR terms of the model
-        public ARMAModel beginARMAProcess(DataObject[] series, double siglevel, int len=50, bool print=true, bool log=false)
+        public ARMAModel buildARMAModel(DataObject[] series, double siglevel, int len = 50, bool print = true, bool log = false)
         {
             bool nonstationarity = testStationarity(series, siglevel);
             if (print)
@@ -36,7 +36,7 @@ namespace ARIMA.timeseries
             }
 
             var tSeries = series;
-            
+
             //Difference the series
             if (d != 0)
             {
@@ -48,15 +48,15 @@ namespace ARIMA.timeseries
                 double[] xdiff = ArrayManipulation.diff(dcol);
                 for (int i = dcol.Length - xdiff.Length; i < xdiff.Length; i++)
                 {
-                    tSeries[i].Value = xdiff[i];
+                    tSeries[i] = new DataObject(tSeries[i].Date, xdiff[i]);
                 }
             }
 
-            var ts = new TimeSeries 
-                                {
-                                    Title = "Time Series",
-                                    Description = "TS Description"
-                                };
+            var ts = new TimeSeries
+            {
+                Title = "Time Series",
+                Description = "TS Description"
+            };
             for (int i = 0; i < series.GetLength(0); i++)
             {
                 ts.Add(tSeries[i].Date, (tSeries[i].Value), false); //datetime, value, false
@@ -72,11 +72,11 @@ namespace ARIMA.timeseries
             }
 
             //Use ACF and PACF to find ARMA parameters
-            var highInterval = 1.96/Math.Sqrt(series.Length);
+            var highInterval = 1.96 / Math.Sqrt(series.Length);
             var acf = ts.ComputeACF(20, false);
             int p = 1;
             var low = acf[0];
-            for (int i = 0; i < acf.Count; i++) 
+            for (int i = 0; i < acf.Count; i++)
             {
                 if (Math.Min(low, acf[i]) <= highInterval && highInterval < Math.Max(acf[i], low))
                 {
@@ -104,7 +104,7 @@ namespace ARIMA.timeseries
                     if (q != 0)
                     {
                         q--;
-                    } 
+                    }
                     if (q == 0)
                     {
                         q = 1;
@@ -164,7 +164,7 @@ namespace ARIMA.timeseries
         }
 
         // evaluates the predicted values to the actual values and saves them to the file specified by the string filepath and prints out the error metrics
-        public static double[] evaluatePrediction(TimeSeries ts, DataObject[] data, List<DateTime> predictdates, string filepath, int offset=0, bool log=false)
+        public static double[] evaluatePrediction(TimeSeries ts, IList<DataObject> data, string filepath, bool log = false)
         {
             double mae = 0;
             double rmse = 0;
@@ -173,30 +173,32 @@ namespace ARIMA.timeseries
             double absmean = 0;
             double sqmean = 0;
             double p = 0;
-            Double[] error = new double[data.Count()];
+            Double[] error = new double[data.Count];
             var csv = new StringBuilder();
             var newLine = string.Format("{0},{1},{2}", "Date", "Predicted", "Actual");
             csv.AppendLine(newLine);
-            for (int i = 0; i < data.Count(); i++)
+            for (int i = 0; i < data.Count; i++)
             {
-                var predictedval = ts[offset + i];
+                var predictedval = ts[ts.Count - data.Count + i];
                 if (log)
                 {
                     predictedval = Math.Pow(2, predictedval);
                 }
-                newLine = string.Format("{0},{1},{2}", predictdates[i].ToString(), predictedval.ToString(), data[i].Value.ToString());
+
+                newLine = string.Format("{0},{1},{2}", data[i].Date.ToString(), predictedval.ToString(), data[i].Value.ToString());
                 csv.AppendLine(newLine);
-                error[i] =  predictedval - (data.ElementAt(i).Value);
+                error[i] = predictedval - (data.ElementAt(i).Value);
                 absmean = absmean + Math.Abs(error[i]);
                 sqmean = sqmean + Math.Pow(error[i], 2);
                 var p_i = (100 * error[i]) / (data.ElementAt(i).Value);
                 p = p + Math.Abs(p_i);
             }
+
             File.WriteAllText(filepath, csv.ToString());
-            mae = absmean/error.Length;
-            rmse = Math.Sqrt(sqmean/error.Length);
-            mape = p/error.Length;
-            
+            mae = absmean / error.Length;
+            rmse = Math.Sqrt(sqmean / error.Length);
+            mape = p / error.Length;
+
             Double[] toReturn = new Double[3];
             toReturn[0] = mae;
             toReturn[1] = rmse;
@@ -206,34 +208,78 @@ namespace ARIMA.timeseries
 
         // returns array of the time series, with X being the first column
         // given data read from a csv file
-        public DataObject[] getSeries(List<string[]> data, int len, bool change=false, int start=0)
+        public static DataObject getDataObject(string[] dataRow, bool change = false)
         {
-            if (len < 0)
+            double val1 = -1;
+            try
             {
-                len = data.Count;
+                val1 = Double.Parse(dataRow[dataRow.Length - 1]);
             }
-            DataObject[] series = new DataObject[len];
-            for (int i = start; i < len + start; i++)
+            catch (System.FormatException)
             {
-                double val1 = -1;
-                try
-                {
-                    val1 = Double.Parse(data[i][data[i].Length - 1]);
-                } catch (System.FormatException)
-                {
-                    continue;
-                }
-                // hard coded the different delimiters for the date and time according to the different datasets
-                if (change)
-                {
-                    series[i - start] = new DataObject(data[i][0], data[i][1], val1, hastime: false, ddelimiter: '-', dateyear: 0, dateday: 2);
-                }
-                else
-                {
-                    series[i - start] = new DataObject(data[i][0], data[i][1], val1);
-                }
+                return default(DataObject);
             }
-            return series;
+            // hard coded the different delimiters for the date and time according to the different datasets
+            if (change)
+            {
+                return buildDataObject(dataRow[0], dataRow[1], val1, hastime: false, ddelimiter: '-', dateyear: 0, dateday: 2);
+            }
+            else
+            {
+                return buildDataObject(dataRow[0], dataRow[1], val1);
+            }
+        }
+
+        //// returns array of the time series, with X being the first column
+        //// given data read from a csv file
+        //public DataObject[] getSeries(string[] dataRow, int len, bool change = false, int start = 0)
+        //{
+
+        //    DataObject[] series = new DataObject[len];
+        //    for (int i = start; i < len + start; i++)
+        //    {
+        //        double val1 = -1;
+        //        try
+        //        {
+        //            val1 = Double.Parse(data[i][data[i].Length - 1]);
+        //        }
+        //        catch (System.FormatException)
+        //        {
+        //            continue;
+        //        }
+        //        // hard coded the different delimiters for the date and time according to the different datasets
+        //        if (change)
+        //        {
+        //            series[i - start] = buildDataObject(data[i][0], data[i][1], val1, hastime: false, ddelimiter: '-', dateyear: 0, dateday: 2);
+        //        }
+        //        else
+        //        {
+        //            series[i - start] = buildDataObject(data[i][0], data[i][1], val1);
+        //        }
+        //    }
+        //    return series;
+        //}
+
+
+        public static DataObject buildDataObject(string datestring, string time, double value, char ddelimiter = '/', char tdelimiter = ':',
+                          int dateyear = 2, int datemonth = 1, int dateday = 0, int timehour = 0, int timemin = 1, int timesec = 2, bool hastime = true)
+        {
+            string[] dateparts = datestring.Split(ddelimiter);
+            string[] timeparts = time.Split(tdelimiter);
+
+            return new DataObject(hastime
+                                      ? new DateTime(
+                                          int.Parse(dateparts[dateyear]),
+                                          int.Parse(dateparts[datemonth]),
+                                          int.Parse(dateparts[dateday]),
+                                          int.Parse(timeparts[timehour]),
+                                          int.Parse(timeparts[timemin]),
+                                          int.Parse(timeparts[timesec]))
+                                      : new DateTime(
+                                          int.Parse(dateparts[dateyear]),
+                                          int.Parse(dateparts[datemonth]),
+                                          int.Parse(dateparts[dateday])),
+                   value);
         }
 
         // tests the stationarity of the DataObject series at the designated significance level
