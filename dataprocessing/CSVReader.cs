@@ -60,7 +60,7 @@ namespace ARIMA.dataprocessing
                     {
                         continue;
                     } 
-                    string[] linedata = new string[] { values[dateindex], values[timeindex], values[xindex] };
+                    string[] linedata = { values[dateindex], values[timeindex], values[xindex] };
                     data.Add(linedata);
                 }
                 else
@@ -77,7 +77,7 @@ namespace ARIMA.dataprocessing
                     {
                         continue;
                     }
-                    string[] linedata = new string[] { values[dateindex], values[xindex] };
+                    string[] linedata = { values[dateindex], values[xindex] };
                     data.Add(linedata);                   
                 }
             }

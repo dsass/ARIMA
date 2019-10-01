@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.757
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARIMA", "ARIMA.csproj", "{3F0E6753-F185-4299-95BD-14B6347AE51E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARIMATest", "..\ARIMATest\ARIMATest.csproj", "{D5D55336-F442-47E9-92F2-FBB6B222DD9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,12 +15,11 @@ Global
 		{3F0E6753-F185-4299-95BD-14B6347AE51E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F0E6753-F185-4299-95BD-14B6347AE51E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F0E6753-F185-4299-95BD-14B6347AE51E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D5D55336-F442-47E9-92F2-FBB6B222DD9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5D55336-F442-47E9-92F2-FBB6B222DD9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5D55336-F442-47E9-92F2-FBB6B222DD9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5D55336-F442-47E9-92F2-FBB6B222DD9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {953BD670-71B9-442D-B9EE-07FB2DA6219C}
 	EndGlobalSection
 EndGlobal
